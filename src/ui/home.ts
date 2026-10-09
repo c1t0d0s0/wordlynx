@@ -52,8 +52,8 @@ function modeSwitch(root: HTMLElement, current: Mode): HTMLElement {
   return h(
     'div',
     { class: 'mode', role: 'group', 'aria-label': 'モードの切りかえ' },
-    option('standard', '<ruby>高学年<rt>こうがくねん</rt></ruby>', 'むずかしい 言葉'),
     option('easy', '<ruby>低学年<rt>ていがくねん</rt></ruby>', 'やさしい 言葉'),
+    option('standard', '<ruby>高学年<rt>こうがくねん</rt></ruby>', 'むずかしい 言葉'),
   );
 }
 
