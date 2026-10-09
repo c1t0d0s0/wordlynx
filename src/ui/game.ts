@@ -13,7 +13,7 @@ import {
   spendPoints,
 } from '../core/storage';
 import { playClear } from './celebrate';
-import { h, withRuby } from './dom';
+import { h, homeButton, withRuby } from './dom';
 import { KEY_DELETE, renderKeyboard } from './keyboard';
 import { openResult } from './result';
 import { TEXT } from './text';
@@ -141,7 +141,7 @@ export function renderGame(
     h(
       'header',
       { class: 'bar' },
-      h('a', { class: 'back', href: '#/' }, '‹ ホーム'),
+      homeButton(t.goHome),
       h('h1', {}, title),
       h('span', { class: 'bar-meta' }, t.words(entries.length)),
     ),

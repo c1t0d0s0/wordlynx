@@ -542,7 +542,7 @@ rt {
   line-height: 1.2;
 }
 
-/* スタンプカードとヤマネコカードのページの「ホーム」ボタン */
+/* 画面の左上の「ホーム」ボタン (パズル・スタンプカード・ヤマネコカードで共通) */
 .back.home-btn {
   display: inline-flex;
   align-items: center;

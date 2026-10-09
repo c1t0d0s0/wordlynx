@@ -15,6 +15,14 @@ export function h<K extends keyof HTMLElementTagNameMap>(
   return el;
 }
 
+/**
+ * 画面の左上に置く、ホームにもどるボタン。ただの文字より目立つよう、色つきのボタンにする。
+ * label は読み上げ用 (「ホームにもどる」)
+ */
+export function homeButton(label: string): HTMLElement {
+  return h('a', { class: 'back home-btn', href: '#/', 'aria-label': label }, h('span', { 'aria-hidden': 'true' }, '‹'), 'ホーム');
+}
+
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 

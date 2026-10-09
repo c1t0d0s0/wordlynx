@@ -1,15 +1,10 @@
 import { jstDate } from '../core/puzzle';
 import { WEEK_LENGTH, currentRun, monthView } from '../core/rewards';
 import { balance, getMode, getStamps } from '../core/storage';
-import { h, hanamaru } from './dom';
+import { h, hanamaru, homeButton } from './dom';
 import { TEXT, type Text } from './text';
 
 const WEEKDAYS = '日月火水木金土';
-
-/** ページの左上に置く、ホームにもどるボタン。ただの文字より目立つよう、色つきのボタンにする */
-export function homeButton(t: Text): HTMLElement {
-  return h('a', { class: 'back home-btn', href: '#/', 'aria-label': t.goHome }, h('span', { 'aria-hidden': 'true' }, '‹'), 'ホーム');
-}
 
 /** スタンプカードだけを大きく見るページ。今日のパズルをクリアしたあとに案内する */
 export function renderStamps(root: HTMLElement): void {
@@ -18,7 +13,7 @@ export function renderStamps(root: HTMLElement): void {
     h(
       'div',
       { class: 'stamps-page' },
-      h('header', { class: 'bar' }, homeButton(t), h('h1', {}, t.stampTitle), h('span', {})),
+      h('header', { class: 'bar' }, homeButton(t.goHome), h('h1', {}, t.stampTitle), h('span', {})),
       h('main', { class: 'stamps-main' }, stampCard(t, true), h('p', { class: 'page-foot' }, h('a', { class: 'btn btn-primary', href: '#/' }, t.goHome))),
     ),
   );
