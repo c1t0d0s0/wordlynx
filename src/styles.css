@@ -150,12 +150,67 @@ rt {
 .hero {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: clamp(0.6rem, 3vw, 1.25rem);
+}
+
+.hero-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.lynx {
+  /* 目や輪郭は、暗い画面でも黒いままにする (文字色に合わせると白目になってしまう) */
+  --lynx-line: #1c2a4a;
+  flex: none;
+  width: clamp(3.25rem, 16vw, 6.5rem);
+}
+
+.lynx svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.lynx-fur {
+  fill: #e9bd72;
+}
+
+.lynx-light {
+  fill: #fff6e1;
+}
+
+.lynx-tuft {
+  fill: var(--lynx-line);
+}
+
+.lynx-pink {
+  fill: #f7b3a6;
+}
+
+.lynx-nose {
+  fill: #e0705f;
+}
+
+.lynx-tongue {
+  fill: #f28f86;
+}
+
+@media (prefers-color-scheme: dark) {
+  .lynx-fur {
+    fill: #c9984a;
+  }
+  /* 耳の先のふさ毛は、暗い背景にとけこまないよう茶色にする */
+  .lynx-tuft {
+    fill: #8f6330;
+  }
+  .lynx-light {
+    fill: #f3e6c8;
+  }
 }
 
 .crest {
   display: grid;
-  --crest: clamp(1.75rem, 8vw, 2.25rem);
+  --crest: clamp(1.5rem, 7vw, 2.25rem);
   grid-template-columns: repeat(4, var(--crest));
   grid-auto-rows: var(--crest);
   gap: 1px;
@@ -180,7 +235,7 @@ rt {
 .brand {
   font-family: var(--hand);
   font-weight: 600;
-  font-size: clamp(1.875rem, 9vw, 2.5rem);
+  font-size: clamp(1.75rem, 8.5vw, 2.5rem);
   line-height: 1.1;
   letter-spacing: 0.02em;
 }

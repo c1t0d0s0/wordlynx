@@ -4,6 +4,7 @@ import { currentStreak, getMode, pruneOldDaily, setMode, statusOf } from '../cor
 import presetsEasy from '../data/presets-easy.json';
 import presets from '../data/presets.json';
 import { h, hanamaru } from './dom';
+import { lynx } from './lynx';
 import { TEXT, type Text } from './text';
 
 const STAGES: Record<Mode, Puzzle[]> = {
@@ -87,7 +88,8 @@ export function renderHome(root: HTMLElement): void {
         'header',
         { class: 'hero' },
         crest(),
-        h('div', {}, h('h1', { class: 'brand' }, 'Wordlynx'), h('p', { class: 'lead' }, t.lead)),
+        h('div', { class: 'hero-text' }, h('h1', { class: 'brand' }, 'Wordlynx'), h('p', { class: 'lead' }, t.lead)),
+        lynx(),
       ),
       modeSwitch(root, mode),
       h(
