@@ -27,6 +27,16 @@ GitHub Pages に公開します。テストが失敗したときは公開され�
 はじめに一度だけ、GitHub のリポジトリで Settings → Pages → Build and deployment の
 Source を「GitHub Actions」にしておきます。
 
+## アクセス解析 (Google のタグ)
+
+ID を設定したときだけ、Google のタグをページに埋め込みます。設定しなければ何も埋め込みません。
+ID が `GTM-…` なら Google タグ マネージャー、`G-…` なら Google アナリティクス (gtag.js) のタグになります。
+
+- 手元: プロジェクト直下の `config.js` に `const GTM_ID = 'G-XXXXXXXXXX';` のように書く
+- GitHub Pages: リポジトリの Settings → Secrets and variables → Actions → Variables に `GTM_ID` を登録する
+
+環境変数 `GTM_ID` (デプロイ時は `vars.GTM_ID`) があればそれを使い、なければ `config.js` の値を使います。
+
 ## 言葉を追加する
 
 `src/data/vocab/` の品詞ごとのファイル (副詞・形容詞・動詞・形容動詞・名詞・四字熟語) に、1 行 1 語で追加します。

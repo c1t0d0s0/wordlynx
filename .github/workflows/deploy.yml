@@ -28,7 +28,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # リポジトリの変数 GTM_ID があれば、その ID で Google のタグを埋め込む (なければ埋め込まない)
       - run: npm run build
+        env:
+          GTM_ID: ${{ vars.GTM_ID }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
