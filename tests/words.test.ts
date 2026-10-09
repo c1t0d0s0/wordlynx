@@ -33,7 +33,7 @@ describe('語彙データ', () => {
 
 describe('低学年モードの語彙', () => {
   it('十分な数がある', () => {
-    expect(EASY_WORDS.length).toBeGreaterThanOrEqual(400);
+    expect(EASY_WORDS.length).toBeGreaterThanOrEqual(1300);
   });
 
   it('学年ごとの漢字表に抜けや重複がない', () => {
