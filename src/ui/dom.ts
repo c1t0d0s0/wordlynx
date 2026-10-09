@@ -29,8 +29,8 @@ export function withRuby<K extends keyof HTMLElementTagNameMap>(tag: K, cls: str
   return el;
 }
 
-/** 先生が赤ペンでかく「はなまる」 */
-export function hanamaru(cls = 'hanamaru'): SVGSVGElement {
+/** 先生が赤ペンでかく「はなまる」の線 (100 × 100 の中にかく) */
+export function hanamaruPoints(): string {
   const pts: string[] = [];
   const turns = 3;
   const steps = 140;
@@ -46,13 +46,17 @@ export function hanamaru(cls = 'hanamaru'): SVGSVGElement {
     const r = 27 + 13 * Math.abs(Math.sin(t * Math.PI * 6));
     pts.push(`${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`);
   }
+  return pts.join(' ');
+}
+
+export function hanamaru(cls = 'hanamaru'): SVGSVGElement {
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
   svg.setAttribute('viewBox', '0 0 100 100');
   svg.setAttribute('class', cls);
   svg.setAttribute('aria-hidden', 'true');
   const path = document.createElementNS(ns, 'polyline');
-  path.setAttribute('points', pts.join(' '));
+  path.setAttribute('points', hanamaruPoints());
   path.setAttribute('pathLength', '1');
   svg.append(path);
   return svg;

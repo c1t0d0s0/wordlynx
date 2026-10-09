@@ -61,7 +61,8 @@ function googleTags(id: string): HtmlTagDescriptor[] {
 function googleTagPlugin(id: string): Plugin {
   return {
     name: 'wordlynx-google-tag',
-    transformIndexHtml: () => (id ? googleTags(id) : []),
+    // カードの確認用ページ (cards.html。開発サーバーでだけ見られる) にはタグを入れない
+    transformIndexHtml: (_html, ctx) => (id && ctx.filename.endsWith('index.html') ? googleTags(id) : []),
   };
 }
 

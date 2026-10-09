@@ -1,5 +1,7 @@
 import { normalizeKana } from '../core/kana';
 import type { Mode, Puzzle, Word } from '../core/puzzle';
+import type { StampReward } from '../core/rewards';
+import { balance } from '../core/storage';
 import { h, hanamaru, rubyHtml, withRuby } from './dom';
 import { TEXT } from './text';
 
@@ -22,11 +24,30 @@ function wordCard(w: Word, showPos: boolean): HTMLElement {
 }
 
 /** クリアしたあとに、出てきた言葉をふりかえる画面 */
-export function openResult(puzzle: Puzzle, opts: { celebrate: boolean; mode: Mode; streak?: number }): void {
+export function openResult(puzzle: Puzzle, opts: { celebrate: boolean; mode: Mode; streak?: number; stamp?: StampReward; month?: number; clearPoints?: number },
+): void {
   const t = TEXT[opts.mode];
   const words = puzzle.entries
     .map((e) => e.word)
     .sort((a, b) => normalizeKana(a.reading).localeCompare(normalizeKana(b.reading), 'ja'));
+
+  // はじめてクリアしたときにもらえたポイントと、今日のパズルのスタンプを知らせる
+  const stamp = opts.stamp?.added ? opts.stamp : undefined;
+  const clearPoints = opts.clearPoints ?? 0;
+  const gained = clearPoints + (stamp ? stamp.weekPoints + stamp.monthPoints : 0);
+  const rewardBox =
+    gained > 0 || stamp
+      ? h(
+          'div',
+          { class: 'result-stamp' },
+          clearPoints > 0 && h('p', { class: 'result-reward' }, t.rewardClear(clearPoints)),
+          stamp && h('p', { class: 'result-stamp-title' }, t.stampDone),
+          stamp && stamp.weekPoints > 0 && h('p', { class: 'result-reward' }, t.rewardWeek(stamp.run)),
+          stamp && stamp.monthPoints > 0 && h('p', { class: 'result-reward' }, t.rewardMonth(opts.month ?? 0)),
+          gained > 0 && h('p', { class: 'result-balance' }, `${t.pointsLabel} ${t.points(balance())}`),
+          gained > 0 && h('a', { class: 'btn', href: '#/cards' }, t.seeCards),
+        )
+      : null;
 
   const dialog = h('dialog', { class: 'result', 'aria-labelledby': 'result-title' });
   const close = () => dialog.close();
@@ -46,6 +67,7 @@ export function openResult(puzzle: Puzzle, opts: { celebrate: boolean; mode: Mod
         ),
       ),
     ),
+    ...(rewardBox ? [rewardBox] : []),
     h('ul', { class: 'word-list' }, ...words.map((w) => wordCard(w, t.showPos))),
     h(
       'div',

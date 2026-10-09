@@ -1,10 +1,15 @@
 import './styles.css';
 import { generateDaily } from './core/generator';
 import { jstDate, type Mode } from './core/puzzle';
+import { migrateRewards } from './core/storage';
 import { EASY_WORDS, WORDS } from './data/words';
+import { renderCards } from './ui/cards';
 import { renderGame } from './ui/game';
 import { renderHome, stageByNumber } from './ui/home';
 import { TEXT } from './ui/text';
+
+// 前から遊んでいた人の記録を、スタンプとポイントに引きつぐ (最初の 1 回だけ)
+migrateRewards();
 
 const app = document.getElementById('app')!;
 let cleanup: (() => void) | null = null;
@@ -26,6 +31,8 @@ function route(): void {
     cleanup = renderGame(app, generateDaily(words, today, mode), t.daily, mode, today);
   } else if (stage) {
     cleanup = renderGame(app, stage, num > 8 ? t.challengeTitle(num) : t.stageTitle(num), mode);
+  } else if (location.hash === '#/cards') {
+    renderCards(app);
   } else {
     renderHome(app);
   }

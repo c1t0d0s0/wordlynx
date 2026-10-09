@@ -1,4 +1,5 @@
 import type { Dir, Mode, Pos } from '../core/puzzle';
+import { CLEAR_POINTS, FREE_HINTS, HINT_COST, MONTH_POINTS, WEEK_LENGTH, WEEK_POINTS } from '../core/rewards';
 
 /** 画面の文言。初級モードは、3 年生までに習う漢字だけを使い、分かち書きにする */
 export interface Text {
@@ -34,11 +35,35 @@ export interface Text {
   statusWrong: (n: number) => string;
   statusOk: (left: number) => string;
   hintAlready: string;
+  hintFree: (left: number) => string;
+  hintPaid: string;
+  hintSpent: (balance: number) => string;
+  hintShort: (balance: number) => string;
   resultDone: string;
   resultReview: string;
   resultSub: (words: number, streak?: number) => string;
   seeBoard: string;
   goHome: string;
+  // スタンプカード・ポイント・ヤマネコカード (初級でも読めるよう、漢字は 3 年生まで)
+  stampTitle: string;
+  stampMonth: (month: number) => string;
+  stampDayLabel: (day: number, stamped: boolean) => string;
+  stampRun: (run: number, left: number) => string;
+  stampRule: string;
+  stampDone: string;
+  rewardClear: (points: number) => string;
+  rewardWeek: (run: number) => string;
+  rewardMonth: (month: number) => string;
+  points: (n: number) => string;
+  pointsLabel: string;
+  seeCards: string;
+  cardsTitle: string;
+  cardsLead: string;
+  cardsOwned: (n: number, total: number) => string;
+  cardGet: string;
+  cardShort: (n: number) => string;
+  cardConfirm: (price: number) => string;
+  cardBackLabel: (price: number) => string;
 }
 
 const standard: Text = {
@@ -70,6 +95,7 @@ const standard: Text = {
     '「゛」「゜」は、字を入れたあとにおします。',
     'パソコンでは、半角のローマ字で入力できます。矢印キーで動き、スペースキーでタテとヨコを切りかえます。',
     'まよったら「こたえあわせ」や「ヒント」を使えます。',
+    `ヒントは1つのパズルで${FREE_HINTS}回まで。それより多く使うときは、1回${HINT_COST}ptいります。`,
   ],
   stageTitle: (n) => `ステージ ${n}`,
   challengeTitle: (n) => `チャレンジ ${n}`,
@@ -88,6 +114,11 @@ const standard: Text = {
   statusWrong: (n) => `ちがう字が${n}マスあります。赤いマスを見直そう。`,
   statusOk: (left) => `ここまでは全部あっています。あと${left}マス。`,
   hintAlready: 'このマスはもうあっています。ほかのマスをえらんでね。',
+  hintFree: (left) => `ヒント（あと${left}回）`,
+  hintPaid: `ヒント（${HINT_COST}pt）`,
+  hintSpent: (balance) => `${HINT_COST}pt使ったよ。持っているポイントは${balance.toLocaleString('ja-JP')}pt。`,
+  hintShort: (balance) =>
+    `ヒントは${FREE_HINTS}回まで。それより多く使うには${HINT_COST}ptいるよ（持っているポイントは${balance.toLocaleString('ja-JP')}pt）。`,
   resultDone: 'よくできました',
   resultReview: 'ことばのふりかえり',
   resultSub: (words, streak) =>
@@ -96,6 +127,28 @@ const standard: Text = {
       : `出てきた${words}この言葉をおさらいしよう。`,
   seeBoard: '盤面を見る',
   goHome: 'ホームにもどる',
+  stampTitle: 'スタンプカード',
+  stampMonth: (month) => `${month}月`,
+  stampDayLabel: (day, stamped) => `${day}日${stamped ? ' スタンプあり' : ''}`,
+  stampRun: (run, left) =>
+    run > 0
+      ? `${run}日つづいているよ。あと${left}日で${WEEK_POINTS}pt。`
+      : '今日のパズルをクリアすると、スタンプを1こおせるよ。',
+  stampRule: `パズルを1つクリアすると${CLEAR_POINTS}pt。今日のパズルを${WEEK_LENGTH}日つづけるたびに${WEEK_POINTS}pt、1日から月のさいごの日まで全部そろうと、さらに${MONTH_POINTS}pt。`,
+  stampDone: 'スタンプをおしたよ',
+  rewardClear: (points) => `クリア！ +${points}pt`,
+  rewardWeek: (run) => `${run}日つづいた！ +${WEEK_POINTS}pt`,
+  rewardMonth: (month) => `${month}月のスタンプが全部そろった！ +${MONTH_POINTS}pt`,
+  points: (n) => `${n.toLocaleString('ja-JP')}pt`,
+  pointsLabel: '持っているポイント',
+  seeCards: 'カードを見る',
+  cardsTitle: 'ヤマネコカード',
+  cardsLead: 'ポイントをためて、ヤマネコのカードを集めよう。',
+  cardsOwned: (n, total) => `${n} / ${total}まい`,
+  cardGet: 'ゲットする',
+  cardShort: (n) => `あと${n.toLocaleString('ja-JP')}pt`,
+  cardConfirm: (price) => `${price.toLocaleString('ja-JP')}ptを使って、このカードをゲットしますか？`,
+  cardBackLabel: (price) => `まだ持っていないカード。${price.toLocaleString('ja-JP')}ptでゲットできる`,
 };
 
 // 「今日のパズル」のらん (見出し・日付・ひとこと・ボタン) は、上級と同じ文言を使う
@@ -109,6 +162,7 @@ const easy: Text = {
     '同じ マスを もういちど おすと、たてと よこが かわります。',
     '「゛」「゜」は、字を 入れた あとに おします。',
     '分からない ときは「こたえあわせ」や「ヒント」を 使えます。',
+    `ヒントは 1つの パズルで ${FREE_HINTS}回まで。それより 多く 使う ときは、1回 ${HINT_COST}pt いります。`,
   ],
   dir: { across: 'よこ', down: 'たて' },
   cluesTitle: { across: 'よこの ヒント', down: 'たての ヒント' },

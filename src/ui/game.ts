@@ -1,6 +1,17 @@
 import { RomajiInput, isGridKana, normalizeKana, toggleMark } from '../core/kana';
 import { entryCells, solutionGrid, type Dir, type Entry, type Mode, type Puzzle } from '../core/puzzle';
-import { currentStreak, freshProgress, loadProgress, recordDailyClear, saveProgress } from '../core/storage';
+import { FREE_HINTS, HINT_COST } from '../core/rewards';
+import {
+  addClear,
+  addStamp,
+  balance,
+  currentStreak,
+  freshProgress,
+  loadProgress,
+  recordDailyClear,
+  saveProgress,
+  spendPoints,
+} from '../core/storage';
 import { h, withRuby } from './dom';
 import { KEY_DELETE, renderKeyboard } from './keyboard';
 import { openResult } from './result';
@@ -112,11 +123,12 @@ export function renderGame(
 
   const status = h('p', { class: 'status', role: 'status' });
   const reviewBtn = h('button', { type: 'button', class: 'btn', onclick: () => openResult(puzzle, { celebrate: false, mode }) }, t.showWords);
+  const hintBtn = h('button', { type: 'button', class: 'btn', onclick: hint });
   const tools = h(
     'div',
     { class: 'tools' },
     h('button', { type: 'button', class: 'btn', onclick: check }, t.check),
-    h('button', { type: 'button', class: 'btn', onclick: hint }, t.hint),
+    hintBtn,
     reviewBtn,
     h('button', { type: 'button', class: 'btn btn-quiet', onclick: restart }, t.restart),
     status,
@@ -314,6 +326,13 @@ export function renderGame(
       status.textContent = t.hintAlready;
       return;
     }
+    // 無料の回数を使い切ったら、1 回ごとにポイントがいる
+    const paid = hintsUsed() >= FREE_HINTS;
+    if (paid && !spendPoints(HINT_COST)) {
+      status.textContent = t.hintShort(balance());
+      return;
+    }
+    progress.hints = hintsUsed() + 1;
     progress.cells[idx] = solution[idx]!;
     revealed.add(idx);
     progress.revealed = [...revealed];
@@ -323,19 +342,43 @@ export function renderGame(
     romaji.reset();
     moveInWord(1);
     afterEdit();
+    paintHintButton();
+    if (paid && !progress.done) status.textContent = t.hintSpent(balance());
+  }
+
+  /** このパズルでヒントを使った回数 (回数を記録する前の途中経過は、開けたマスの数で数える) */
+  function hintsUsed(): number {
+    return progress.hints ?? progress.revealed.length;
+  }
+
+  function paintHintButton(): void {
+    const left = FREE_HINTS - hintsUsed();
+    hintBtn.textContent = left > 0 ? t.hintFree(left) : t.hintPaid;
   }
 
   function finish(): void {
     progress.done = true;
     saveProgress(puzzle.id, progress);
     if (dailyDate) recordDailyClear(dailyDate, mode);
+    // スタンプは初級・上級で共通。同じ日に両方クリアしても 1 個
+    const stamp = dailyDate ? addStamp(dailyDate) : undefined;
     page.classList.add('is-done');
-    openResult(puzzle, { celebrate: true, mode, streak: dailyDate ? currentStreak(dailyDate, mode) : undefined });
+    openResult(puzzle, {
+      celebrate: true,
+      mode,
+      clearPoints: addClear(puzzle.id),
+      streak: dailyDate ? currentStreak(dailyDate, mode) : undefined,
+      stamp,
+      month: dailyDate ? Number(dailyDate.slice(5, 7)) : undefined,
+    });
   }
 
   function restart(): void {
     if (!confirm(t.restartConfirm)) return;
+    // ヒントの回数は、やりなおしてももどさない
+    const used = hintsUsed();
     progress = freshProgress(puzzle);
+    progress.hints = used;
     revealed.clear();
     wrong.clear();
     saveProgress(puzzle.id, progress);
@@ -346,6 +389,7 @@ export function renderGame(
   }
 
   cellEls.forEach((cell, i) => cell && paintCell(i));
+  paintHintButton();
   page.classList.toggle('is-done', progress.done);
   paintSelection(false);
   document.addEventListener('keydown', onKeyDown);

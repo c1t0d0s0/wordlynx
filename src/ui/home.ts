@@ -5,6 +5,7 @@ import presetsEasy from '../data/presets-easy.json';
 import presets from '../data/presets.json';
 import { h, hanamaru } from './dom';
 import { lynx } from './lynx';
+import { stampCard } from './stamps';
 import { TEXT, type Text } from './text';
 
 const STAGES: Record<Mode, Puzzle[]> = {
@@ -105,6 +106,7 @@ export function renderHome(root: HTMLElement): void {
         dailyStatus === 'done' ? hanamaru('hanamaru hanamaru-daily') : null,
         h('a', { class: 'btn btn-primary', href: link(mode, 'daily') }, dailyAction),
       ),
+      stampCard(t),
       h(
         'section',
         { 'aria-labelledby': 'stage-title' },
