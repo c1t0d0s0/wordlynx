@@ -42,7 +42,7 @@ export interface Text {
 }
 
 const standard: Text = {
-  lead: '入試によく出る言葉を、クロスワードでおぼえよう。',
+  lead: 'クロスワードパズル',
   daily: '今日のパズル',
   dateLabel: (m, d, w) => `${m}月${d}日（${'日月火水木金土'[w]}）`,
   dailyNote: (done, streak) =>
@@ -101,7 +101,7 @@ const standard: Text = {
 // 「今日のパズル」のらん (見出し・日付・ひとこと・ボタン) は、高学年と同じ文言を使う
 const easy: Text = {
   ...standard,
-  lead: '言葉を つないで 遊ぼう。',
+  lead: 'クロスワードパズル',
   challengeNote: 'たて20マス、よこ20マスの 大きな パズル。時間の ある ときに どうぞ。',
   words: (n) => `${n}こ`,
   howtoItems: [
