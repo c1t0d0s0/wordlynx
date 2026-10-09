@@ -98,19 +98,10 @@ const standard: Text = {
   goHome: 'ホームにもどる',
 };
 
+// 「今日のパズル」のらん (見出し・日付・ひとこと・ボタン) は、高学年と同じ文言を使う
 const easy: Text = {
   ...standard,
   lead: '言葉を つないで 遊ぼう。',
-  daily: '今日の パズル',
-  dailyNote: (done, streak) =>
-    done
-      ? streak > 1
-        ? `クリアしたよ。${streak}日 つづいているね。`
-        : 'クリアしたよ。明日も 新しい 問題が 出るよ。'
-      : streak > 0
-        ? `${streak}日 つづけて クリア中。今日も やってみよう。`
-        : '毎日 ひとつ、新しい 問題が 出るよ。',
-  review: 'もういちど 見る',
   challengeNote: 'たて20マス、よこ20マスの 大きな パズル。時間の ある ときに どうぞ。',
   words: (n) => `${n}こ`,
   howtoItems: [
