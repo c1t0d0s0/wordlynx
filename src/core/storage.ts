@@ -66,6 +66,15 @@ export function setMode(mode: Mode): void {
   write('mode', mode);
 }
 
+/** 効果音を鳴らすかどうか。何もえらんでいなければ鳴らす */
+export function getSound(): boolean {
+  return read<boolean>('sound') !== false;
+}
+
+export function setSound(on: boolean): void {
+  write('sound', on);
+}
+
 // 連続日数はモードごとに数える
 const statsKey = (mode: Mode) => (mode === 'easy' ? 'daily-easy' : 'daily');
 

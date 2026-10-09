@@ -59,6 +59,8 @@ export interface Text {
   seeCards: string;
   seeStamps: string;
   rewardLinks: string;
+  soundOn: string;
+  soundOff: string;
   cardsTitle: string;
   cardsLead: string;
   cardsOwned: (n: number, total: number) => string;
@@ -146,6 +148,8 @@ const standard: Text = {
   seeCards: 'カードを見る',
   seeStamps: 'スタンプカードを見る',
   rewardLinks: 'スタンプカードとヤマネコカード',
+  soundOn: '音：オン',
+  soundOff: '音：オフ',
   cardsTitle: 'ヤマネコカード',
   cardsLead: 'ポイントをためて、ヤマネコのカードを集めよう。',
   cardsOwned: (n, total) => `${n} / ${total}まい`,

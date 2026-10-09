@@ -18,7 +18,7 @@ let cleanup: (() => void) | null = null;
 function route(): void {
   cleanup?.();
   cleanup = null;
-  document.querySelectorAll('dialog').forEach((d) => d.remove());
+  document.querySelectorAll('dialog, .fx').forEach((d) => d.remove());
 
   // #/daily, #/stage/3 は上級むけ。#/easy/daily, #/easy/stage/3 は初級むけ
   const match = location.hash.match(/^#\/(easy\/)?(daily|stage\/(\d+))$/);

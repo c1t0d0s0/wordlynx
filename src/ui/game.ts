@@ -12,6 +12,7 @@ import {
   saveProgress,
   spendPoints,
 } from '../core/storage';
+import { playClear } from './celebrate';
 import { h, withRuby } from './dom';
 import { KEY_DELETE, renderKeyboard } from './keyboard';
 import { openResult } from './result';
@@ -268,7 +269,7 @@ export function renderGame(
   }
 
   function onKeyDown(ev: KeyboardEvent): void {
-    if (ev.ctrlKey || ev.metaKey || ev.altKey || document.querySelector('dialog[open]')) return;
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || document.querySelector('dialog[open], .fx')) return;
     const target = ev.target as HTMLElement;
     const onControl = target.closest('button, a, summary') !== null;
     const arrows: Record<string, [number, number]> = {
@@ -362,14 +363,19 @@ export function renderGame(
     if (dailyDate) recordDailyClear(dailyDate, mode);
     // スタンプは初級・上級で共通。同じ日に両方クリアしても 1 個
     const stamp = dailyDate ? addStamp(dailyDate) : undefined;
+    const clearPoints = addClear(puzzle.id);
     page.classList.add('is-done');
-    openResult(puzzle, {
-      celebrate: true,
-      mode,
-      clearPoints: addClear(puzzle.id),
-      streak: dailyDate ? currentStreak(dailyDate, mode) : undefined,
-      stamp,
-      month: dailyDate ? Number(dailyDate.slice(5, 7)) : undefined,
+    // 記録をすませてから演出を出す。出てきた言葉が 1 つずつ大きくなって、ばくはつする
+    void playClear(entries.map((e) => e.word.reading)).then(() => {
+      if (!page.isConnected) return; // 演出のとちゅうで、ほかの画面にうつった
+      openResult(puzzle, {
+        celebrate: true,
+        mode,
+        clearPoints,
+        streak: dailyDate ? currentStreak(dailyDate, mode) : undefined,
+        stamp,
+        month: dailyDate ? Number(dailyDate.slice(5, 7)) : undefined,
+      });
     });
   }
 

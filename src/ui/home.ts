@@ -1,6 +1,6 @@
 import { dailyId } from '../core/generator';
 import { jstDate, type Mode, type Puzzle } from '../core/puzzle';
-import { balance, currentStreak, getMode, pruneOldDaily, setMode, statusOf } from '../core/storage';
+import { balance, currentStreak, getMode, getSound, pruneOldDaily, setMode, setSound, statusOf } from '../core/storage';
 import presetsEasy from '../data/presets-easy.json';
 import presets from '../data/presets.json';
 import { h, hanamaru } from './dom';
@@ -55,6 +55,22 @@ function modeSwitch(root: HTMLElement, current: Mode): HTMLElement {
     option('easy', '<ruby>初級<rt>しょきゅう</rt></ruby>', 'やさしい 言葉'),
     option('standard', '<ruby>上級<rt>じょうきゅう</rt></ruby>', 'むずかしい 言葉'),
   );
+}
+
+/** クリアしたときの効果音を鳴らすかどうかの切りかえ */
+function soundSwitch(t: Text): HTMLElement {
+  const btn = h('button', { type: 'button', class: 'btn sound-switch' });
+  const paint = () => {
+    const on = getSound();
+    btn.textContent = on ? t.soundOn : t.soundOff;
+    btn.setAttribute('aria-pressed', String(on));
+  };
+  btn.addEventListener('click', () => {
+    setSound(!getSound());
+    paint();
+  });
+  paint();
+  return h('p', { class: 'settings' }, btn);
 }
 
 function stageTile(stage: Puzzle, index: number, mode: Mode, t: Text): HTMLElement {
@@ -138,6 +154,7 @@ export function renderHome(root: HTMLElement): void {
         h('summary', {}, t.howto),
         h('ul', {}, ...t.howtoItems.map((item) => h('li', {}, item))),
       ),
+      soundSwitch(t),
     ),
   );
 }

@@ -683,6 +683,20 @@ rt {
   }
 }
 
+.settings {
+  margin-top: -1.5rem;
+}
+
+.sound-switch {
+  min-height: 2.25rem;
+  font-size: 0.875rem;
+}
+
+.sound-switch[aria-pressed='false'] {
+  color: var(--muted);
+  font-weight: 500;
+}
+
 /* ---- 盤面の画面 ---- */
 .game {
   display: flex;
@@ -1082,6 +1096,64 @@ rt {
     background: var(--paper);
     box-shadow: 0 0 0 1px var(--rule-soft);
   }
+}
+
+/* ---- クリアしたときの演出 ---- */
+.fx {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  background: rgb(20 33 28 / 0.45);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.fx-word {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  font-family: var(--hand);
+  font-weight: 600;
+  line-height: 1.1;
+  white-space: nowrap;
+  color: #1c2a4a;
+  /* 白いふちどりで、どんな背景の上でも読めるようにする */
+  text-shadow:
+    0 0 0.04em #fff,
+    0.035em 0.035em 0 #fff,
+    -0.035em 0.035em 0 #fff,
+    0.035em -0.035em 0 #fff,
+    -0.035em -0.035em 0 #fff,
+    0.06em 0.09em 0 #ffd23f;
+  will-change: transform, opacity;
+}
+
+.fx-char {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.fx-bit,
+.fx-ring {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.fx-star {
+  border-radius: 0;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+}
+
+.fx-ring {
+  width: 6rem;
+  height: 6rem;
+  border: 0.5rem solid #ffd23f;
+  box-shadow: 0 0 0 0.3rem #fff;
 }
 
 /* ---- クリア画面 ---- */
