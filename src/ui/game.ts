@@ -123,14 +123,19 @@ export function renderGame(
   );
 
   const status = h('p', { class: 'status', role: 'status' });
-  const reviewBtn = h('button', { type: 'button', class: 'btn', onclick: () => openResult(puzzle, { celebrate: false, mode }) }, t.showWords);
-  const hintBtn = h('button', { type: 'button', class: 'btn', onclick: hint });
+  const reviewBtn = h('button', { type: 'button', class: 'btn only-done', onclick: () => openResult(puzzle, { celebrate: false, mode }) }, t.showWords);
+  const hintBtn = h('button', { type: 'button', class: 'btn only-playing', onclick: hint });
+  // ヒントに使えるポイントを、ヒントのボタンのそばに出す
+  const pointsNum = h('b', {});
+  const pointsBox = h('p', { class: 'tools-points' }, t.pointsLabel, pointsNum);
   const tools = h(
     'div',
     { class: 'tools' },
-    h('button', { type: 'button', class: 'btn', onclick: check }, t.check),
+    h('button', { type: 'button', class: 'btn only-playing', onclick: check }, t.check),
     hintBtn,
     reviewBtn,
+    // ヒントのボタンのすぐあとに置く。せまい画面では次の行の左、広い画面ではヒントの右にならぶ
+    pointsBox,
     h('button', { type: 'button', class: 'btn btn-quiet', onclick: restart }, t.restart),
     status,
   );
@@ -355,6 +360,7 @@ export function renderGame(
   function paintHintButton(): void {
     const left = FREE_HINTS - hintsUsed();
     hintBtn.textContent = left > 0 ? t.hintFree(left) : t.hintPaid;
+    pointsNum.textContent = t.points(balance());
   }
 
   function finish(): void {
