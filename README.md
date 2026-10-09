@@ -19,6 +19,14 @@ npm run build    # dist/ に静的ファイルを出力
 npm run preview  # ビルド結果の確認
 ```
 
+## 公開 (GitHub Pages)
+
+`main` ブランチに push すると、GitHub Actions (`.github/workflows/deploy.yml`) がテストとビルドを行い、
+GitHub Pages に公開します。テストが失敗したときは公開されません。
+
+はじめに一度だけ、GitHub のリポジトリで Settings → Pages → Build and deployment の
+Source を「GitHub Actions」にしておきます。
+
 ## 言葉を追加する
 
 `src/data/vocab/` の品詞ごとのファイル (副詞・形容詞・動詞・形容動詞・名詞・四字熟語) に、1 行 1 語で追加します。
