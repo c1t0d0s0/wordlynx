@@ -91,7 +91,7 @@ describe('生成', () => {
   });
 });
 
-describe('低学年モード', () => {
+describe('初級モード', () => {
   it('ふつうのモードとは別の問題になり、やさしい言葉だけが出る', () => {
     const easy = generateDaily(EASY_WORDS, '2026-10-09', 'easy');
     expect(easy.id).toBe('daily-easy-2026-10-09');

@@ -31,7 +31,7 @@ describe('語彙データ', () => {
   });
 });
 
-describe('低学年モードの語彙', () => {
+describe('初級モードの語彙', () => {
   it('十分な数がある', () => {
     expect(EASY_WORDS.length).toBeGreaterThanOrEqual(1300);
   });

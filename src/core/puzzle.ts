@@ -1,5 +1,5 @@
 export type Pos = '副詞' | '形容詞' | '動詞' | '形容動詞' | '名詞' | '四字熟語';
-/** standard = 高学年むけ、easy = 小学校低学年むけ */
+/** standard = 上級むけ、easy = 初級むけ */
 export type Mode = 'standard' | 'easy';
 export type Dir = 'across' | 'down'; // across = ヨコ, down = タテ
 

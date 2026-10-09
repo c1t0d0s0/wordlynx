@@ -12,7 +12,7 @@ const STAGES: Record<Mode, Puzzle[]> = {
   easy: presetsEasy as Puzzle[],
 };
 
-/** モードごとの URL。高学年むけは #/daily、低学年むけは #/easy/daily */
+/** モードごとの URL。上級むけは #/daily、初級むけは #/easy/daily */
 const link = (mode: Mode, path: string) => (mode === 'easy' ? `#/easy/${path}` : `#/${path}`);
 
 /** 「くまなく」と「こよなく」が「な」で交わる、タイトルのかざり */
@@ -52,8 +52,8 @@ function modeSwitch(root: HTMLElement, current: Mode): HTMLElement {
   return h(
     'div',
     { class: 'mode', role: 'group', 'aria-label': 'モードの切りかえ' },
-    option('easy', '<ruby>低学年<rt>ていがくねん</rt></ruby>', 'やさしい 言葉'),
-    option('standard', '<ruby>高学年<rt>こうがくねん</rt></ruby>', 'むずかしい 言葉'),
+    option('easy', '<ruby>初級<rt>しょきゅう</rt></ruby>', 'やさしい 言葉'),
+    option('standard', '<ruby>上級<rt>じょうきゅう</rt></ruby>', 'むずかしい 言葉'),
   );
 }
 

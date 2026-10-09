@@ -1,6 +1,6 @@
 import type { Dir, Mode, Pos } from '../core/puzzle';
 
-/** 画面の文言。低学年モードは、3 年生までに習う漢字だけを使い、分かち書きにする */
+/** 画面の文言。初級モードは、3 年生までに習う漢字だけを使い、分かち書きにする */
 export interface Text {
   lead: string;
   daily: string;
@@ -98,7 +98,7 @@ const standard: Text = {
   goHome: 'ホームにもどる',
 };
 
-// 「今日のパズル」のらん (見出し・日付・ひとこと・ボタン) は、高学年と同じ文言を使う
+// 「今日のパズル」のらん (見出し・日付・ひとこと・ボタン) は、上級と同じ文言を使う
 const easy: Text = {
   ...standard,
   lead: 'クロスワードパズル',
