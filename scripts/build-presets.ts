@@ -1,6 +1,6 @@
 // プリセットのステージを作り直す
 //   npm run presets -- easy       低学年モード (src/data/presets-easy.json)
-//   npm run presets -- standard   中学受験モード (src/data/presets.json)
+//   npm run presets -- standard   高学年モード (src/data/presets.json)
 // 語彙を変えたあとに実行すると盤面も変わり、遊んでいる人の途中経過が消える。
 import { writeFileSync } from 'node:fs';
 import { generate } from '../src/core/generator';

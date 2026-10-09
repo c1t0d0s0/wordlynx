@@ -38,7 +38,7 @@ export const WORDS: Word[] = [
 
 /**
  * 低学年モードの言葉。答えに小さい「っゃゅょ」をふくむ言葉は入れず、
- * カギと例文は漢字を使わずに、分かち書きで書く。
+ * カギと例文は 3 年生までに習う漢字だけを使い、分かち書きで書く。
  */
 export const EASY_WORDS: Word[] = [
   ...parse('名詞', easyNouns),

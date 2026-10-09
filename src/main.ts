@@ -14,7 +14,7 @@ function route(): void {
   cleanup = null;
   document.querySelectorAll('dialog').forEach((d) => d.remove());
 
-  // #/daily, #/stage/3 は中学受験むけ。#/easy/daily, #/easy/stage/3 は低学年むけ
+  // #/daily, #/stage/3 は高学年むけ。#/easy/daily, #/easy/stage/3 は低学年むけ
   const match = location.hash.match(/^#\/(easy\/)?(daily|stage\/(\d+))$/);
   const mode: Mode = match?.[1] ? 'easy' : 'standard';
   const t = TEXT[mode];

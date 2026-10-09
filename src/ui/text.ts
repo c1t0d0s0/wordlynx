@@ -1,6 +1,6 @@
 import type { Dir, Mode, Pos } from '../core/puzzle';
 
-/** 画面の文言。低学年モードは、漢字を使わずひらがなで書く */
+/** 画面の文言。低学年モードは、3 年生までに習う漢字だけを使い、分かち書きにする */
 export interface Text {
   lead: string;
   daily: string;
@@ -99,57 +99,43 @@ const standard: Text = {
 };
 
 const easy: Text = {
-  lead: 'ことばを つないで あそぼう。',
-  daily: 'きょうの パズル',
-  dateLabel: (m, d, w) => `${m}がつ${d}にち（${['にち', 'げつ', 'か', 'すい', 'もく', 'きん', 'ど'][w]}）`,
+  ...standard,
+  lead: '言葉を つないで 遊ぼう。',
+  daily: '今日の パズル',
   dailyNote: (done, streak) =>
     done
       ? streak > 1
-        ? `クリアしたよ。${streak}にち つづいているね。`
-        : 'クリアしたよ。あしたも あたらしい もんだいが でるよ。'
+        ? `クリアしたよ。${streak}日 つづいているね。`
+        : 'クリアしたよ。明日も 新しい 問題が 出るよ。'
       : streak > 0
-        ? `${streak}にち つづけて クリアちゅう。きょうも やってみよう。`
-        : 'まいにち ひとつ、あたらしい もんだいが でるよ。',
-  start: 'はじめる',
-  resume: 'つづきから',
-  review: 'もういちど みる',
-  stages: 'ステージ',
-  challenge: 'チャレンジ',
-  challengeNote: 'たて20マス、よこ20マスの おおきな パズル。じかんの ある ときに どうぞ。',
-  playing: 'とちゅう',
-  cleared: 'クリア',
+        ? `${streak}日 つづけて クリア中。今日も やってみよう。`
+        : '毎日 ひとつ、新しい 問題が 出るよ。',
+  review: 'もういちど 見る',
+  challengeNote: 'たて20マス、よこ20マスの 大きな パズル。時間の ある ときに どうぞ。',
   words: (n) => `${n}こ`,
-  howto: 'あそびかた',
   howtoItems: [
-    'マスを えらんで、ヒントに あう ことばを ひらがなで いれます。',
-    'おなじ マスを もういちど おすと、たてと よこが かわります。',
-    '「゛」「゜」は、じを いれた あとに おします。',
-    'わからない ときは「こたえあわせ」や「ヒント」を つかえます。',
+    'マスを えらんで、ヒントに 合う 言葉を ひらがなで 入れます。',
+    '同じ マスを もういちど おすと、たてと よこが かわります。',
+    '「゛」「゜」は、字を 入れた あとに おします。',
+    '分からない ときは「こたえあわせ」や「ヒント」を 使えます。',
   ],
-  stageTitle: (n) => `ステージ ${n}`,
-  challengeTitle: (n) => `チャレンジ ${n}`,
   dir: { across: 'よこ', down: 'たて' },
   cluesTitle: { across: 'よこの ヒント', down: 'たての ヒント' },
-  len: (n) => `${n}もじ`,
-  meta: (_pos, n) => `${n}もじ`,
+  meta: (_pos, n) => `${n}文字`,
   example: 'れい）',
   showPos: false,
-  check: 'こたえあわせ',
-  hint: 'ヒント',
-  showWords: 'ことばを みる',
-  restart: 'やりなおす',
-  restartConfirm: 'いれた じを ぜんぶ けして、さいしょから やりなおしますか？',
-  statusEmpty: 'まだ じが はいって いません。',
-  statusWrong: (n) => `ちがう じが ${n}マス あります。あかい マスを みなおそう。`,
-  statusOk: (left) => `ここまでは ぜんぶ あっています。あと ${left}マス。`,
-  hintAlready: 'この マスは もう あっています。ほかの マスを えらんでね。',
-  resultDone: 'よくできました',
-  resultReview: 'ことばの ふりかえり',
+  showWords: '言葉を 見る',
+  restartConfirm: '入れた 字を 全部 消して、さいしょから やりなおしますか？',
+  statusEmpty: 'まだ 字が 入って いません。',
+  statusWrong: (n) => `ちがう 字が ${n}マス あります。赤い マスを 見直そう。`,
+  statusOk: (left) => `ここまでは 全部 合っています。あと ${left}マス。`,
+  hintAlready: 'この マスは もう 合っています。ほかの マスを えらんでね。',
+  resultReview: '言葉の ふりかえり',
   resultSub: (words, streak) =>
     streak && streak > 1
-      ? `${streak}にち つづけて クリア。${words}この ことばを おさらいしよう。`
-      : `でてきた ${words}この ことばを おさらいしよう。`,
-  seeBoard: 'パズルを みる',
+      ? `${streak}日 つづけて クリア。${words}この 言葉を おさらいしよう。`
+      : `出てきた ${words}この 言葉を おさらいしよう。`,
+  seeBoard: 'パズルを 見る',
   goHome: 'ホームに もどる',
 };
 
