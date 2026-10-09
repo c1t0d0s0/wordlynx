@@ -1,0 +1,818 @@
+/* 原稿用紙と赤ペンをもとにした見た目。暗い画面では黒板とチョークになる */
+:root {
+  --bg: #eef3ee;
+  --paper: #fdfdfa;
+  --rule: #6aa893;
+  --rule-soft: #c5ddd3;
+  --ink: #1c2a4a;
+  --muted: #566475;
+  --mark: #ffe36e;
+  --mark-soft: #fff5c2;
+  --red: #d63c2c;
+  --red-soft: #fde3df;
+  --on-ink: #fdfdfa;
+  --ui: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  --hand: 'Klee One', 'UD Digi Kyokasho N-R', 'Hiragino Maru Gothic ProN', 'Yu Gothic', sans-serif;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14211c;
+    --paper: #1d2f28;
+    --rule: #4f8a76;
+    --rule-soft: #2f4a40;
+    --ink: #eef1e4;
+    --muted: #a3b3a8;
+    --mark: #8a7417;
+    --mark-soft: #48431f;
+    --red: #ff8d7d;
+    --red-soft: #4d2721;
+    --on-ink: #14211c;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--ui);
+  font-weight: 500;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+h1,
+h2,
+p,
+ul,
+ol {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+rt {
+  font-size: 0.55em;
+}
+
+/* ---- 共通の部品 ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 1.1rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.btn-quiet {
+  border-color: transparent;
+  background: none;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.pos {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.hanamaru {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex: none;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- ホーム ---- */
+.home {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.5rem;
+}
+
+.home h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.crest {
+  display: grid;
+  --crest: clamp(1.75rem, 8vw, 2.25rem);
+  grid-template-columns: repeat(4, var(--crest));
+  grid-auto-rows: var(--crest);
+  gap: 1px;
+  flex: none;
+}
+
+.crest-cell {
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule);
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.crest-cross {
+  background: var(--mark);
+}
+
+.brand {
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: clamp(1.875rem, 9vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.lead {
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.daily {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule);
+  border-left: 0.5rem solid var(--rule);
+}
+
+.daily-text {
+  flex: 1 1 14rem;
+}
+
+.daily-date {
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: 1.75rem;
+  line-height: 1.3;
+}
+
+.daily-note {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.hanamaru-daily {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.section-note {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.tiles-big {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.tile {
+  position: relative;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  aspect-ratio: 1;
+  padding: 0.25rem;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule);
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.tiles-big .tile {
+  aspect-ratio: 2.4;
+}
+
+.tile:hover {
+  background: var(--mark-soft);
+}
+
+.tile-num {
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.tile-meta {
+  color: var(--muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.tile-status {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.4rem;
+  color: var(--red);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.hanamaru-small {
+  position: absolute;
+  inset: 8%;
+  width: 84%;
+  height: 84%;
+  stroke-width: 2;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.howto {
+  border-top: 1px solid var(--rule-soft);
+  padding-top: 1rem;
+}
+
+.howto summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.howto ul {
+  margin-top: 0.5rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  max-width: 38rem;
+}
+
+/* ---- 盤面の画面 ---- */
+.game {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.bar {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.bar h1 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.back {
+  justify-self: start;
+  padding: 0.35rem 0.5rem 0.35rem 0;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.bar-meta {
+  justify-self: end;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.play {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.board-scroll {
+  overflow-x: auto;
+  padding: 0.5rem 0.75rem 1rem;
+}
+
+.board {
+  --min-cell: 30px;
+  --fit: min(100%, 32.5rem, 100dvh - 24.5rem);
+  container-type: inline-size;
+  display: grid;
+  /* 字の有無でマスの大きさが変わらないよう、行も列も中身に関係なく等分する */
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--n), minmax(0, 1fr));
+  gap: 1px;
+  width: max(calc(var(--n) * var(--min-cell)), var(--fit));
+  margin: 0 auto;
+  aspect-ratio: 1;
+}
+
+.cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule);
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: calc(100cqw / var(--n) * 0.58);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cell.in-word {
+  background: var(--mark-soft);
+}
+
+.cell.is-active {
+  background: var(--mark);
+  box-shadow: 0 0 0 2px var(--ink);
+  z-index: 1;
+}
+
+.cell:focus-visible {
+  outline-offset: 0;
+  z-index: 2;
+}
+
+.cell.is-revealed {
+  color: var(--rule);
+}
+
+.cell.is-wrong {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.cell.is-wrong.is-active {
+  box-shadow: 0 0 0 2px var(--red);
+}
+
+.num {
+  position: absolute;
+  top: 6%;
+  left: 8%;
+  font-family: var(--ui);
+  font-weight: 700;
+  font-size: max(8px, calc(100cqw / var(--n) * 0.24));
+  color: var(--muted);
+}
+
+.cell[data-pending]:not([data-pending=''])::after {
+  content: attr(data-pending);
+  position: absolute;
+  right: 6%;
+  bottom: 6%;
+  font-family: var(--ui);
+  font-size: max(9px, calc(100cqw / var(--n) * 0.26));
+  color: var(--muted);
+}
+
+.clues {
+  padding: 0.5rem 0.75rem 1.5rem;
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+.clues h2 {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.clue {
+  display: grid;
+  grid-template-columns: 1.75rem 1fr auto;
+  align-items: baseline;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 0;
+  border-bottom: 1px solid var(--rule-soft);
+  background: none;
+  text-align: left;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.clue-num {
+  font-weight: 700;
+}
+
+.clue-len {
+  color: var(--muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.clue.is-filled .clue-text {
+  color: var(--muted);
+}
+
+.clue.is-active {
+  background: var(--mark-soft);
+}
+
+.dock {
+  flex: none;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  padding: 0.4rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom));
+}
+
+.now {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+.step {
+  width: 2.25rem;
+  height: 2.75rem;
+  border: 0;
+  background: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.now-body {
+  min-width: 0;
+}
+
+.now-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  line-height: 1.3;
+}
+
+.now-tag {
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.now-clue {
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.now-example {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 34rem;
+  margin: 0.35rem auto;
+}
+
+.tools .btn {
+  min-height: 2rem;
+  padding: 0 0.8rem;
+  font-size: 0.8125rem;
+}
+
+.tools .btn-quiet {
+  margin-left: auto;
+}
+
+.status {
+  flex-basis: 100%;
+  font-size: 0.8125rem;
+  color: var(--red);
+  line-height: 1.4;
+}
+
+.status:empty {
+  display: none;
+}
+
+/* クリア前は「ことばを見る」を、クリア後は「こたえあわせ」「ヒント」をかくす */
+.game:not(.is-done) .tools .btn:nth-child(3),
+.game.is-done .tools .btn:nth-child(-n + 2) {
+  display: none;
+}
+
+.kbd {
+  --key-h: 2.4rem;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+.key {
+  height: var(--key-h);
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: var(--bg);
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.key:active {
+  background: var(--mark);
+}
+
+.key-special {
+  background: var(--rule-soft);
+  font-family: var(--ui);
+  font-size: 1.5rem;
+}
+
+.game.is-done .kbd {
+  display: none;
+}
+
+@media (max-height: 720px) {
+  .kbd {
+    --key-h: 2.1rem;
+  }
+  .now-example {
+    display: none;
+  }
+}
+
+/* 広い画面: 左に盤面、右にカギの一覧とキーボード */
+@media (min-width: 62.5rem) {
+  .game {
+    display: grid;
+    grid-template-columns: auto minmax(18rem, 25rem);
+    grid-template-rows: auto auto auto auto 1fr;
+    justify-content: center;
+    column-gap: 2.5rem;
+    height: auto;
+    min-height: 100dvh;
+    padding: 0 1.5rem 2rem;
+  }
+
+  .play,
+  .dock {
+    display: contents;
+  }
+
+  .bar {
+    grid-column: 1 / -1;
+    padding: 1rem 0;
+  }
+
+  .board-scroll {
+    grid-column: 1;
+    grid-row: 2;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .board {
+    --fit: clamp(25rem, 100dvh - 20rem, 38rem);
+  }
+
+  .game-big .board {
+    --fit: clamp(40rem, 100dvh - 20rem, 52rem);
+  }
+
+  .now,
+  .tools {
+    grid-column: 1;
+    width: 0;
+    min-width: 100%;
+    max-width: none;
+    margin: 0;
+    align-self: start;
+  }
+
+  .now {
+    grid-row: 3;
+    margin-top: 1rem;
+    padding: 0.5rem 0.25rem;
+    background: var(--paper);
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+
+  .tools {
+    grid-row: 4;
+    margin-top: 0.75rem;
+  }
+
+  .clues {
+    grid-column: 2;
+    grid-row: 2;
+    contain: size;
+    overflow-y: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0 0.5rem 0 0;
+  }
+
+  .clues h2:first-child {
+    margin-top: 0;
+  }
+
+  .kbd {
+    grid-column: 2;
+    grid-row: 3 / span 2;
+    align-self: start;
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .key {
+    background: var(--paper);
+    box-shadow: 0 0 0 1px var(--rule-soft);
+  }
+}
+
+/* ---- クリア画面 ---- */
+.result {
+  width: min(36rem, calc(100vw - 1.5rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 1.5rem 1.25rem;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 0 0 1px var(--rule), 0 1.5rem 3rem rgb(0 0 0 / 0.25);
+}
+
+.result::backdrop {
+  background: rgb(20 33 28 / 0.55);
+}
+
+.result-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.result h2 {
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: 1.75rem;
+  line-height: 1.3;
+}
+
+.result-sub {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.result .hanamaru polyline {
+  stroke-dasharray: 1;
+  animation: draw 1.6s ease-out 0.15s both;
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result .hanamaru polyline {
+    animation: none;
+  }
+}
+
+.word-list {
+  margin: 1.25rem 0;
+}
+
+.word {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.word-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+}
+
+.word-reading {
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.word-kanji {
+  color: var(--muted);
+}
+
+.word-example {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.word-example b {
+  color: var(--ink);
+  background: linear-gradient(transparent 60%, var(--mark) 60%);
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  position: sticky;
+  bottom: -1.5rem;
+  margin: 0 -1.25rem -1.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--paper);
+  border-top: 1px solid var(--rule-soft);
+}
