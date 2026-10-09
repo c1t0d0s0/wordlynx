@@ -5,6 +5,10 @@ import verbs from './vocab/verbs';
 import naAdjectives from './vocab/na-adjectives';
 import nouns from './vocab/nouns';
 import yoji from './vocab/yoji';
+import easyNouns from './vocab-easy/nouns';
+import easyVerbs from './vocab-easy/verbs';
+import easyAdjectives from './vocab-easy/adjectives';
+import easyOthers from './vocab-easy/others';
 
 /**
  * 1 行 1 語。「よみ|漢字まじりの書き方|カギ|例文」の順に書く。
@@ -30,4 +34,15 @@ export const WORDS: Word[] = [
   ...parse('形容動詞', naAdjectives),
   ...parse('名詞', nouns),
   ...parse('四字熟語', yoji),
+];
+
+/**
+ * 低学年モードの言葉。答えに小さい「っゃゅょ」をふくむ言葉は入れず、
+ * カギと例文は漢字を使わずに、分かち書きで書く。
+ */
+export const EASY_WORDS: Word[] = [
+  ...parse('名詞', easyNouns),
+  ...parse('動詞', easyVerbs),
+  ...parse('形容詞', easyAdjectives),
+  ...parse('副詞', easyOthers),
 ];

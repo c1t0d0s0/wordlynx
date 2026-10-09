@@ -1,5 +1,5 @@
 import { normalizeKana } from './kana';
-import type { Dir, Entry, Puzzle, Word } from './puzzle';
+import type { Dir, Entry, Mode, Puzzle, Word } from './puzzle';
 import { type Rng, rngFromString, shuffle } from './rng';
 
 interface Placed {
@@ -196,13 +196,18 @@ export function generate(words: readonly Word[], opts: GenerateOptions): Puzzle 
 }
 
 export const DAILY_SIZE = 10;
-export const DAILY_WORDS = 12;
+export const DAILY_WORDS: Record<Mode, number> = { standard: 12, easy: 10 };
 
-export function generateDaily(words: readonly Word[], date: string): Puzzle {
+export function dailyId(date: string, mode: Mode): string {
+  return mode === 'easy' ? `daily-easy-${date}` : `daily-${date}`;
+}
+
+/** words には、そのモードの語彙をわたす */
+export function generateDaily(words: readonly Word[], date: string, mode: Mode = 'standard'): Puzzle {
   return generate(words, {
-    id: `daily-${date}`,
-    seed: `wordlynx-daily-${date}`,
+    id: dailyId(date, mode),
+    seed: mode === 'easy' ? `wordlynx-daily-easy-${date}` : `wordlynx-daily-${date}`,
     size: DAILY_SIZE,
-    targetWords: DAILY_WORDS,
+    targetWords: DAILY_WORDS[mode],
   });
 }

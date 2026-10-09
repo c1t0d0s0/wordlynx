@@ -1,14 +1,22 @@
 import { RomajiInput, isGridKana, normalizeKana, toggleMark } from '../core/kana';
-import { DIR_LABEL, entryCells, solutionGrid, type Dir, type Entry, type Puzzle } from '../core/puzzle';
+import { entryCells, solutionGrid, type Dir, type Entry, type Mode, type Puzzle } from '../core/puzzle';
 import { currentStreak, freshProgress, loadProgress, recordDailyClear, saveProgress } from '../core/storage';
 import { h, withRuby } from './dom';
 import { KEY_DELETE, renderKeyboard } from './keyboard';
 import { openResult } from './result';
+import { TEXT } from './text';
 
 const other = (dir: Dir): Dir => (dir === 'across' ? 'down' : 'across');
 
 /** 盤面の画面を作る。もどり値は、画面をはなれるときの後かたづけ */
-export function renderGame(root: HTMLElement, puzzle: Puzzle, title: string, dailyDate?: string): () => void {
+export function renderGame(
+  root: HTMLElement,
+  puzzle: Puzzle,
+  title: string,
+  mode: Mode,
+  dailyDate?: string,
+): () => void {
+  const t = TEXT[mode];
   const n = puzzle.size;
   const solution = solutionGrid(puzzle);
   let progress = loadProgress(puzzle);
@@ -74,7 +82,7 @@ export function renderGame(root: HTMLElement, puzzle: Puzzle, title: string, dai
           { type: 'button', class: 'clue', onclick: () => select(cellsOf[i][0], e.dir) },
           h('span', { class: 'clue-num' }, String(e.num)),
           withRuby('span', 'clue-text', e.word.clue),
-          h('span', { class: 'clue-len' }, `${e.answer.length}文字`),
+          h('span', { class: 'clue-len' }, t.len(e.answer.length)),
         );
         clueEls[i] = btn;
         return h('li', {}, btn);
@@ -83,9 +91,9 @@ export function renderGame(root: HTMLElement, puzzle: Puzzle, title: string, dai
   const clues = h(
     'section',
     { class: 'clues', 'aria-label': 'カギの一覧' },
-    h('h2', {}, 'ヨコのカギ'),
+    h('h2', {}, t.cluesTitle.across),
     clueList('across'),
-    h('h2', {}, 'タテのカギ'),
+    h('h2', {}, t.cluesTitle.down),
     clueList('down'),
   );
 
@@ -103,14 +111,14 @@ export function renderGame(root: HTMLElement, puzzle: Puzzle, title: string, dai
   );
 
   const status = h('p', { class: 'status', role: 'status' });
-  const reviewBtn = h('button', { type: 'button', class: 'btn', onclick: () => openResult(puzzle, { celebrate: false }) }, 'ことばを見る');
+  const reviewBtn = h('button', { type: 'button', class: 'btn', onclick: () => openResult(puzzle, { celebrate: false, mode }) }, t.showWords);
   const tools = h(
     'div',
     { class: 'tools' },
-    h('button', { type: 'button', class: 'btn', onclick: check }, 'こたえあわせ'),
-    h('button', { type: 'button', class: 'btn', onclick: hint }, 'ヒント'),
+    h('button', { type: 'button', class: 'btn', onclick: check }, t.check),
+    h('button', { type: 'button', class: 'btn', onclick: hint }, t.hint),
     reviewBtn,
-    h('button', { type: 'button', class: 'btn btn-quiet', onclick: restart }, 'やりなおす'),
+    h('button', { type: 'button', class: 'btn btn-quiet', onclick: restart }, t.restart),
     status,
   );
 
@@ -122,7 +130,7 @@ export function renderGame(root: HTMLElement, puzzle: Puzzle, title: string, dai
       { class: 'bar' },
       h('a', { class: 'back', href: '#/' }, '‹ ホーム'),
       h('h1', {}, title),
-      h('span', { class: 'bar-meta' }, `${entries.length}語`),
+      h('span', { class: 'bar-meta' }, t.words(entries.length)),
     ),
     h('div', { class: 'play' }, h('div', { class: 'board-scroll' }, board), clues),
     h('div', { class: 'dock' }, now, tools, renderKeyboard(onScreenKey)),
@@ -152,10 +160,10 @@ export function renderGame(root: HTMLElement, puzzle: Puzzle, title: string, dai
       el.classList.toggle('is-filled', cellsOf[i].every((c) => progress.cells[c] !== ''));
     });
     const e: Entry = entries[active];
-    nowTag.textContent = `${DIR_LABEL[e.dir]} ${e.num}`;
-    nowPos.textContent = `${e.word.pos}・${e.answer.length}文字`;
+    nowTag.textContent = `${t.dir[e.dir]} ${e.num}`;
+    nowPos.textContent = t.meta(e.word.pos, e.answer.length);
     nowClue.replaceChildren(...withRuby('span', '', e.word.clue).childNodes);
-    nowExample.replaceChildren(...withRuby('span', '', `例）${e.word.example}`).childNodes);
+    nowExample.replaceChildren(...withRuby('span', '', `${t.example}${e.word.example}`).childNodes);
     if (scroll) {
       cellEls[sel.idx]!.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       // カギの一覧が横にならぶ広い画面でだけ、一覧も追いかける
@@ -294,16 +302,16 @@ export function renderGame(root: HTMLElement, puzzle: Puzzle, title: string, dai
       if (c !== solution[i]) wrong.add(i);
     });
     cellEls.forEach((cell, i) => cell && paintCell(i));
-    if (filled === 0) status.textContent = 'まだ字が入っていません。';
-    else if (wrong.size > 0) status.textContent = `ちがう字が${wrong.size}マスあります。赤いマスを見直そう。`;
-    else if (filled < total) status.textContent = `ここまでは全部あっています。あと${total - filled}マス。`;
+    if (filled === 0) status.textContent = t.statusEmpty;
+    else if (wrong.size > 0) status.textContent = t.statusWrong(wrong.size);
+    else if (filled < total) status.textContent = t.statusOk(total - filled);
   }
 
   function hint(): void {
     if (progress.done) return;
     const idx = sel.idx;
     if (progress.cells[idx] === solution[idx]) {
-      status.textContent = 'このマスはもうあっています。ほかのマスをえらんでね。';
+      status.textContent = t.hintAlready;
       return;
     }
     progress.cells[idx] = solution[idx]!;
@@ -320,13 +328,13 @@ export function renderGame(root: HTMLElement, puzzle: Puzzle, title: string, dai
   function finish(): void {
     progress.done = true;
     saveProgress(puzzle.id, progress);
-    if (dailyDate) recordDailyClear(dailyDate);
+    if (dailyDate) recordDailyClear(dailyDate, mode);
     page.classList.add('is-done');
-    openResult(puzzle, { celebrate: true, streak: dailyDate ? currentStreak(dailyDate) : undefined });
+    openResult(puzzle, { celebrate: true, mode, streak: dailyDate ? currentStreak(dailyDate, mode) : undefined });
   }
 
   function restart(): void {
-    if (!confirm('入れた字をすべて消して、さいしょからやりなおしますか？')) return;
+    if (!confirm(t.restartConfirm)) return;
     progress = freshProgress(puzzle);
     revealed.clear();
     wrong.clear();

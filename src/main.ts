@@ -1,9 +1,10 @@
 import './styles.css';
 import { generateDaily } from './core/generator';
-import { jstDate } from './core/puzzle';
-import { WORDS } from './data/words';
+import { jstDate, type Mode } from './core/puzzle';
+import { EASY_WORDS, WORDS } from './data/words';
 import { renderGame } from './ui/game';
 import { renderHome, stageByNumber } from './ui/home';
+import { TEXT } from './ui/text';
 
 const app = document.getElementById('app')!;
 let cleanup: (() => void) | null = null;
@@ -13,18 +14,22 @@ function route(): void {
   cleanup = null;
   document.querySelectorAll('dialog').forEach((d) => d.remove());
 
-  const path = location.hash.replace(/^#\/?/, '');
-  const stage = path.match(/^stage\/(\d+)$/);
-  const puzzle = stage ? stageByNumber(Number(stage[1])) : undefined;
-  if (path === 'daily') {
+  // #/daily, #/stage/3 は中学受験むけ。#/easy/daily, #/easy/stage/3 は低学年むけ
+  const match = location.hash.match(/^#\/(easy\/)?(daily|stage\/(\d+))$/);
+  const mode: Mode = match?.[1] ? 'easy' : 'standard';
+  const t = TEXT[mode];
+  const num = Number(match?.[3]);
+  const stage = match?.[3] ? stageByNumber(mode, num) : undefined;
+  if (match?.[2] === 'daily') {
     const today = jstDate();
-    cleanup = renderGame(app, generateDaily(WORDS, today), '今日のパズル', today);
-  } else if (stage && puzzle) {
-    const num = Number(stage[1]);
-    cleanup = renderGame(app, puzzle, num > 8 ? `チャレンジ ${num}` : `ステージ ${num}`);
+    const words = mode === 'easy' ? EASY_WORDS : WORDS;
+    cleanup = renderGame(app, generateDaily(words, today, mode), t.daily, mode, today);
+  } else if (stage) {
+    cleanup = renderGame(app, stage, num > 8 ? t.challengeTitle(num) : t.stageTitle(num), mode);
   } else {
     renderHome(app);
   }
+  document.documentElement.dataset.mode = match ? mode : '';
   window.scrollTo(0, 0);
 }
 

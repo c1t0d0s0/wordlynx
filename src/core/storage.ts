@@ -1,4 +1,4 @@
-import { addDays, puzzleSignature, type Puzzle } from './puzzle';
+import { addDays, puzzleSignature, type Mode, type Puzzle } from './puzzle';
 
 const PREFIX = 'wordlynx:v1:';
 
@@ -55,16 +55,27 @@ export function statusOf(id: string): Status {
   return saved.cells?.some((c) => c !== '') ? 'playing' : 'new';
 }
 
-export function recordDailyClear(date: string): void {
-  const stats = read<DailyStats>('daily');
+export function getMode(): Mode {
+  return read<Mode>('mode') === 'easy' ? 'easy' : 'standard';
+}
+
+export function setMode(mode: Mode): void {
+  write('mode', mode);
+}
+
+// 連続日数はモードごとに数える
+const statsKey = (mode: Mode) => (mode === 'easy' ? 'daily-easy' : 'daily');
+
+export function recordDailyClear(date: string, mode: Mode): void {
+  const stats = read<DailyStats>(statsKey(mode));
   if (stats?.lastDate === date) return;
   const streak = stats?.lastDate === addDays(date, -1) ? stats.streak + 1 : 1;
-  write('daily', { lastDate: date, streak });
+  write(statsKey(mode), { lastDate: date, streak });
 }
 
 /** 今日か昨日にクリアしていれば、連続日数が続いている */
-export function currentStreak(today: string): number {
-  const stats = read<DailyStats>('daily');
+export function currentStreak(today: string, mode: Mode): number {
+  const stats = read<DailyStats>(statsKey(mode));
   if (!stats) return 0;
   return stats.lastDate === today || stats.lastDate === addDays(today, -1) ? stats.streak : 0;
 }
@@ -72,10 +83,10 @@ export function currentStreak(today: string): number {
 /** 古いデイリーの途中経過を消す */
 export function pruneOldDaily(today: string): void {
   try {
-    const keep = `${PREFIX}progress:daily-${today}`;
+    const keep = [`${PREFIX}progress:daily-${today}`, `${PREFIX}progress:daily-easy-${today}`];
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const key = localStorage.key(i);
-      if (key?.startsWith(`${PREFIX}progress:daily-`) && key !== keep) localStorage.removeItem(key);
+      if (key?.startsWith(`${PREFIX}progress:daily-`) && !keep.includes(key)) localStorage.removeItem(key);
     }
   } catch {
     /* 無視 */

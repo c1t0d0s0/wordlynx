@@ -192,6 +192,51 @@ rt {
   line-height: 1.6;
 }
 
+.mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin-top: -1rem;
+  box-shadow: 0 0 0 1px var(--rule);
+  background: var(--rule);
+}
+
+.mode-option {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  padding: 0.6rem 0.5rem 0.5rem;
+  border: 0;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.mode-label {
+  font-weight: 700;
+  line-height: 1.9;
+}
+
+.mode-note {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+.mode-option[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.mode-option[aria-pressed='true'] .mode-note {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.mode-option:focus-visible {
+  outline-offset: -4px;
+  outline-color: var(--red);
+}
+
 .daily {
   position: relative;
   display: flex;

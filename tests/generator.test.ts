@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { generate, generateDaily } from '../src/core/generator';
 import { addDays, entryCells, solutionGrid, type Puzzle } from '../src/core/puzzle';
-import { WORDS } from '../src/data/words';
+import { EASY_WORDS, WORDS } from '../src/data/words';
 import presets from '../src/data/presets.json';
+import presetsEasy from '../src/data/presets-easy.json';
 
 /** 2 文字以上つながるマスの列が、すべて置いた言葉と一致することを確かめる */
 function assertValid(p: Puzzle): void {
@@ -87,6 +88,38 @@ describe('生成', () => {
     const p = generate(WORDS, { id: 't', seed: 'big', size: 20, targetWords: 45, attempts: 10 });
     expect(p.entries.length).toBeGreaterThanOrEqual(40);
     assertValid(p);
+  });
+});
+
+describe('低学年モード', () => {
+  it('ふつうのモードとは別の問題になり、やさしい言葉だけが出る', () => {
+    const easy = generateDaily(EASY_WORDS, '2026-10-09', 'easy');
+    expect(easy.id).toBe('daily-easy-2026-10-09');
+    expect(easy.id).not.toBe(generateDaily(WORDS, '2026-10-09').id);
+    expect(JSON.stringify(easy)).toBe(JSON.stringify(generateDaily(EASY_WORDS, '2026-10-09', 'easy')));
+    const allowed = new Set(EASY_WORDS.map((w) => w.reading));
+    for (const e of easy.entries) expect(allowed.has(e.word.reading)).toBe(true);
+  });
+
+  it('1 年分のデイリーがすべて正しく作れる', () => {
+    let date = '2026-01-01';
+    for (let i = 0; i < 365; i++) {
+      const p = generateDaily(EASY_WORDS, date, 'easy');
+      expect(p.entries.length, date).toBeGreaterThanOrEqual(8);
+      assertValid(p);
+      date = addDays(date, 1);
+    }
+  }, 120_000);
+
+  const stages = presetsEasy as Puzzle[];
+  it('ステージは 10×10 が 8 個、20×20 が 2 個', () => {
+    expect(stages.map((s) => s.size)).toEqual([10, 10, 10, 10, 10, 10, 10, 10, 20, 20]);
+    expect(stages.map((s) => s.id)).toEqual(stages.map((_, i) => `easy-stage-${i + 1}`));
+  });
+  it.each(stages.map((s) => [s.id, s] as const))('%s は正しい盤面で、やさしい言葉だけ', (_id, s) => {
+    assertValid(s);
+    const allowed = new Set(EASY_WORDS.map((w) => w.reading));
+    for (const e of s.entries) expect(allowed.has(e.word.reading)).toBe(true);
   });
 });
 

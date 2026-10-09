@@ -1,4 +1,6 @@
 export type Pos = '副詞' | '形容詞' | '動詞' | '形容動詞' | '名詞' | '四字熟語';
+/** standard = 中学受験むけ、easy = 小学校低学年むけ */
+export type Mode = 'standard' | 'easy';
 export type Dir = 'across' | 'down'; // across = ヨコ, down = タテ
 
 export interface Word {
@@ -28,8 +30,6 @@ export interface Puzzle {
   size: number;
   entries: Entry[];
 }
-
-export const DIR_LABEL: Record<Dir, string> = { across: 'ヨコ', down: 'タテ' };
 
 export function entryCells(e: Entry, size: number): number[] {
   const cells: number[] = [];

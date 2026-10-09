@@ -1,17 +1,18 @@
-import { jstDate, type Puzzle } from '../core/puzzle';
-import { currentStreak, pruneOldDaily, statusOf, type Status } from '../core/storage';
+import { dailyId } from '../core/generator';
+import { jstDate, type Mode, type Puzzle } from '../core/puzzle';
+import { currentStreak, getMode, pruneOldDaily, setMode, statusOf } from '../core/storage';
+import presetsEasy from '../data/presets-easy.json';
 import presets from '../data/presets.json';
 import { h, hanamaru } from './dom';
+import { TEXT, type Text } from './text';
 
-const STAGES = presets as Puzzle[];
-const WEEKDAYS = '日月火水木金土';
+const STAGES: Record<Mode, Puzzle[]> = {
+  standard: presets as Puzzle[],
+  easy: presetsEasy as Puzzle[],
+};
 
-function dateLabel(date: string): string {
-  const d = new Date(`${date}T00:00:00Z`);
-  return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日（${WEEKDAYS[d.getUTCDay()]}）`;
-}
-
-const STATUS_TEXT: Record<Status, string> = { new: '', playing: 'とちゅう', done: 'クリア' };
+/** モードごとの URL。中学受験むけは #/daily、低学年むけは #/easy/daily */
+const link = (mode: Mode, path: string) => (mode === 'easy' ? `#/easy/${path}` : `#/${path}`);
 
 /** 「くまなく」と「こよなく」が「な」で交わる、タイトルのかざり */
 function crest(): HTMLElement {
@@ -27,24 +28,56 @@ function crest(): HTMLElement {
   return el;
 }
 
-function stageTile(stage: Puzzle, index: number): HTMLElement {
+function modeSwitch(root: HTMLElement, current: Mode): HTMLElement {
+  const option = (mode: Mode, label: string, note: string) => {
+    const btn = h(
+      'button',
+      {
+        type: 'button',
+        class: 'mode-option',
+        'aria-pressed': String(mode === current),
+        onclick: () => {
+          if (mode === current) return;
+          setMode(mode);
+          renderHome(root);
+        },
+      },
+      h('span', { class: 'mode-label' }),
+      h('span', { class: 'mode-note' }, note),
+    );
+    btn.firstElementChild!.innerHTML = label;
+    return btn;
+  };
+  return h(
+    'div',
+    { class: 'mode', role: 'group', 'aria-label': 'モードの切りかえ' },
+    option('standard', '<ruby>中学受験<rt>ちゅうがくじゅけん</rt></ruby>', 'むずかしい ことば'),
+    option('easy', '<ruby>低学年<rt>ていがくねん</rt></ruby>', 'やさしい ことば'),
+  );
+}
+
+function stageTile(stage: Puzzle, index: number, mode: Mode, t: Text): HTMLElement {
   const status = statusOf(stage.id);
   return h(
     'a',
-    { class: `tile tile-${status}`, href: `#/stage/${index + 1}` },
+    { class: `tile tile-${status}`, href: link(mode, `stage/${index + 1}`) },
     h('span', { class: 'tile-num' }, String(index + 1)),
-    h('span', { class: 'tile-meta' }, `${stage.entries.length}語`),
+    h('span', { class: 'tile-meta' }, t.words(stage.entries.length)),
     status === 'done' ? hanamaru('hanamaru hanamaru-small') : null,
-    status !== 'new' && h('span', { class: 'tile-status' }, STATUS_TEXT[status]),
+    status !== 'new' && h('span', { class: 'tile-status' }, status === 'done' ? t.cleared : t.playing),
   );
 }
 
 export function renderHome(root: HTMLElement): void {
+  const mode = getMode();
+  const t = TEXT[mode];
+  const stages = STAGES[mode];
   const today = jstDate();
   pruneOldDaily(today);
-  const dailyStatus = statusOf(`daily-${today}`);
-  const streak = currentStreak(today);
-  const dailyAction = { new: 'はじめる', playing: 'つづきから', done: 'もういちど見る' }[dailyStatus];
+  const dailyStatus = statusOf(dailyId(today, mode));
+  const streak = currentStreak(today, mode);
+  const dailyAction = { new: t.start, playing: t.resume, done: t.review }[dailyStatus];
+  const d = new Date(`${today}T00:00:00Z`);
 
   root.replaceChildren(
     h(
@@ -54,68 +87,45 @@ export function renderHome(root: HTMLElement): void {
         'header',
         { class: 'hero' },
         crest(),
-        h(
-          'div',
-          {},
-          h('h1', { class: 'brand' }, 'Wordlynx'),
-          h('p', { class: 'lead' }, '入試によく出る言葉を、クロスワードでおぼえよう。'),
-        ),
+        h('div', {}, h('h1', { class: 'brand' }, 'Wordlynx'), h('p', { class: 'lead' }, t.lead)),
       ),
+      modeSwitch(root, mode),
       h(
         'section',
         { class: 'daily', 'aria-labelledby': 'daily-title' },
         h(
           'div',
           { class: 'daily-text' },
-          h('h2', { id: 'daily-title' }, '今日のパズル'),
-          h('p', { class: 'daily-date' }, dateLabel(today)),
-          h(
-            'p',
-            { class: 'daily-note' },
-            dailyStatus === 'done'
-              ? streak > 1
-                ? `クリアずみ。${streak}日つづいているよ。`
-                : 'クリアずみ。あしたも新しい問題が出るよ。'
-              : streak > 0
-                ? `${streak}日つづけてクリア中。今日もやってみよう。`
-                : '毎日ひとつ、みんなに同じ問題が出るよ。',
-          ),
+          h('h2', { id: 'daily-title' }, t.daily),
+          h('p', { class: 'daily-date' }, t.dateLabel(d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCDay())),
+          h('p', { class: 'daily-note' }, t.dailyNote(dailyStatus === 'done', streak)),
         ),
         dailyStatus === 'done' ? hanamaru('hanamaru hanamaru-daily') : null,
-        h('a', { class: 'btn btn-primary', href: '#/daily' }, dailyAction),
+        h('a', { class: 'btn btn-primary', href: link(mode, 'daily') }, dailyAction),
       ),
       h(
         'section',
         { 'aria-labelledby': 'stage-title' },
-        h('h2', { id: 'stage-title' }, 'ステージ'),
-        h('div', { class: 'tiles' }, ...STAGES.slice(0, 8).map((s, i) => stageTile(s, i))),
+        h('h2', { id: 'stage-title' }, t.stages),
+        h('div', { class: 'tiles' }, ...stages.slice(0, 8).map((s, i) => stageTile(s, i, mode, t))),
       ),
       h(
         'section',
         { 'aria-labelledby': 'challenge-title' },
-        h('h2', { id: 'challenge-title' }, 'チャレンジ'),
-        h('p', { class: 'section-note' }, 'たて20マス、よこ20マスの大きな盤面。時間のあるときにどうぞ。'),
-        h('div', { class: 'tiles tiles-big' }, ...STAGES.slice(8).map((s, i) => stageTile(s, i + 8))),
+        h('h2', { id: 'challenge-title' }, t.challenge),
+        h('p', { class: 'section-note' }, t.challengeNote),
+        h('div', { class: 'tiles tiles-big' }, ...stages.slice(8).map((s, i) => stageTile(s, i + 8, mode, t))),
       ),
       h(
         'details',
         { class: 'howto' },
-        h('summary', {}, 'あそびかた'),
-        h(
-          'ul',
-          {},
-          h('li', {}, 'マスをえらんで、カギ（言葉の意味）に合う言葉をひらがなで入れます。'),
-          h('li', {}, '同じマスをもういちどおすと、タテとヨコが切りかわります。'),
-          h('li', {}, '小さい「っ・ゃ・ゅ・ょ」は大きい字で入れます。「ちゃっかり」は「ちやつかり」です。'),
-          h('li', {}, '「゛」「゜」は、字を入れたあとにおします。'),
-          h('li', {}, 'パソコンでは、半角のローマ字で入力できます。矢印キーで動き、スペースキーでタテとヨコを切りかえます。'),
-          h('li', {}, 'まよったら「こたえあわせ」や「ヒント」を使えます。'),
-        ),
+        h('summary', {}, t.howto),
+        h('ul', {}, ...t.howtoItems.map((item) => h('li', {}, item))),
       ),
     ),
   );
 }
 
-export function stageByNumber(n: number): Puzzle | undefined {
-  return STAGES[n - 1];
+export function stageByNumber(mode: Mode, n: number): Puzzle | undefined {
+  return STAGES[mode][n - 1];
 }
