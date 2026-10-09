@@ -58,8 +58,30 @@ export function statusOf(id: string): Status {
   return saved.cells?.some((c) => c !== '') ? 'playing' : 'new';
 }
 
+/** えらんでいるモード。はじめて開いた人は初級から始まる */
 export function getMode(): Mode {
-  return read<Mode>('mode') === 'easy' ? 'easy' : 'standard';
+  return read<Mode>('mode') === 'standard' ? 'standard' : 'easy';
+}
+
+/**
+ * はじめて開いたときに、モードを決めて保存する。
+ * - まったくはじめての人は初級
+ * - 「はじめは初級」に変える前から遊んでいて、モードをえらんだことがない人は上級のまま
+ *   (前は上級がはじめの状態で、えらんでいない人には何も保存していなかった)
+ * アプリを開いたとき、ほかの記録を書く前によぶ。
+ */
+export function migrateMode(): void {
+  if (read<Mode>('mode') !== null) return;
+  let played = false;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      if (localStorage.key(i)?.startsWith(PREFIX)) played = true;
+    }
+  } catch {
+    /* 無視 */
+  }
+  // ここで保存しておかないと、このあと書かれる記録のせいで、次に開いたとき「前から遊んでいた人」に見えてしまう
+  write('mode', played ? 'standard' : 'easy');
 }
 
 export function setMode(mode: Mode): void {

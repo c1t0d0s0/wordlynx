@@ -6,6 +6,11 @@ import { TEXT, type Text } from './text';
 
 const WEEKDAYS = '日月火水木金土';
 
+/** ページの左上に置く、ホームにもどるボタン。ただの文字より目立つよう、色つきのボタンにする */
+export function homeButton(t: Text): HTMLElement {
+  return h('a', { class: 'back home-btn', href: '#/', 'aria-label': t.goHome }, h('span', { 'aria-hidden': 'true' }, '‹'), 'ホーム');
+}
+
 /** スタンプカードだけを大きく見るページ。今日のパズルをクリアしたあとに案内する */
 export function renderStamps(root: HTMLElement): void {
   const t = TEXT[getMode()];
@@ -13,8 +18,8 @@ export function renderStamps(root: HTMLElement): void {
     h(
       'div',
       { class: 'stamps-page' },
-      h('header', { class: 'bar' }, h('a', { class: 'back', href: '#/' }, '‹ ホーム'), h('h1', {}, t.stampTitle), h('span', {})),
-      h('main', { class: 'stamps-main' }, stampCard(t, true)),
+      h('header', { class: 'bar' }, homeButton(t), h('h1', {}, t.stampTitle), h('span', {})),
+      h('main', { class: 'stamps-main' }, stampCard(t, true), h('p', { class: 'page-foot' }, h('a', { class: 'btn btn-primary', href: '#/' }, t.goHome))),
     ),
   );
 }
@@ -64,7 +69,6 @@ export function stampCard(t: Text, standalone = false): HTMLElement {
       'div',
       { class: 'stamp-foot' },
       h('p', { class: 'points' }, h('span', { class: 'points-label' }, t.pointsLabel), h('b', { class: 'points-num' }, t.points(balance()))),
-      h('a', { class: 'btn', href: '#/cards' }, t.seeCards),
     ),
   );
 }

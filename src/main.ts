@@ -1,7 +1,7 @@
 import './styles.css';
 import { generateDaily } from './core/generator';
 import { jstDate, type Mode } from './core/puzzle';
-import { migrateRewards } from './core/storage';
+import { migrateMode, migrateRewards } from './core/storage';
 import { EASY_WORDS, WORDS } from './data/words';
 import { renderCards } from './ui/cards';
 import { renderGame } from './ui/game';
@@ -10,6 +10,7 @@ import { renderStamps } from './ui/stamps';
 import { TEXT } from './ui/text';
 
 // 前から遊んでいた人の記録を、スタンプとポイントに引きつぐ (最初の 1 回だけ)
+migrateMode(); // migrateRewards が記録を書く前に、前から遊んでいた人かどうかを見る
 migrateRewards();
 
 const app = document.getElementById('app')!;

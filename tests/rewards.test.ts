@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addDays } from '../src/core/puzzle';
 import { currentRun, earnedPoints, monthView, rewardFor } from '../src/core/rewards';
-import { addClear, addStamp, balance, buyCard, getCards, getClears, getStamps, migrateRewards, recordDailyClear, spendPoints } from '../src/core/storage';
+import { addClear, addStamp, balance, buyCard, getCards, getClears, getMode, getStamps, migrateMode, migrateRewards, setMode, recordDailyClear, spendPoints } from '../src/core/storage';
 import { CARDS } from '../src/data/cards';
 import { kanjiBeyondGrade3 } from './kanji';
 
@@ -221,6 +221,36 @@ describe('ヒントに使うポイント', () => {
 });
 
 describe('はじめて遊ぶ人', () => {
+  it('はじめは初級がえらばれている', () => {
+    migrateMode();
+    migrateRewards();
+    expect(getMode()).toBe('easy');
+    // 次に開いたときも初級のまま (スタンプなどの記録が書かれたあとでも、上級に変わらない)
+    migrateMode();
+    migrateRewards();
+    expect(getMode()).toBe('easy');
+    setMode('standard');
+    expect(getMode()).toBe('standard');
+    migrateMode();
+    expect(getMode()).toBe('standard'); // えらんだあとは変わらない
+    setMode('easy');
+    expect(getMode()).toBe('easy');
+  });
+
+  it('前から遊んでいて、モードをえらんだことがない人は上級のまま', () => {
+    store.set('wordlynx:v1:progress:stage-1', JSON.stringify({ sig: 'x', cells: ['あ'], revealed: [], done: false }));
+    migrateMode();
+    migrateRewards();
+    expect(getMode()).toBe('standard');
+  });
+
+  it('前から初級をえらんでいた人は初級のまま', () => {
+    store.set('wordlynx:v1:mode', JSON.stringify('easy'));
+    store.set('wordlynx:v1:progress:easy-stage-1', JSON.stringify({ sig: 'x', cells: ['あ'], revealed: [], done: true }));
+    migrateMode();
+    expect(getMode()).toBe('easy');
+  });
+
   it('最初のクリアでスタンプと 20pt がその場でもらえる (引きつぎに先取りされない)', () => {
     migrateRewards(); // アプリを開いたとき
     recordDailyClear('2026-10-09', 'standard');

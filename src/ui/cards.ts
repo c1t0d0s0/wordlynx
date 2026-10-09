@@ -2,6 +2,7 @@ import { balance, buyCard, getCards, getMode } from '../core/storage';
 import { CARDS, type Card } from '../data/cards';
 import { h } from './dom';
 import { cardSvg } from './lynx';
+import { homeButton } from './stamps';
 import { TEXT } from './text';
 
 /** ヤマネコカードの画面。ためたポイントとカードを交換し、集めたカードをながめる */
@@ -51,7 +52,7 @@ export function renderCards(root: HTMLElement, justGot?: string): void {
       h(
         'header',
         { class: 'bar' },
-        h('a', { class: 'back', href: '#/' }, '‹ ホーム'),
+        homeButton(t),
         h('h1', {}, t.cardsTitle),
         h('span', { class: 'bar-meta' }, t.cardsOwned(owned.size, CARDS.length)),
       ),
@@ -62,6 +63,7 @@ export function renderCards(root: HTMLElement, justGot?: string): void {
         h('p', { class: 'points points-big' }, h('span', { class: 'points-label' }, t.pointsLabel), h('b', { class: 'points-num' }, t.points(points))),
         h('ul', { class: 'card-grid' }, ...CARDS.map(tile)),
         h('p', { class: 'stamp-rule' }, t.stampRule),
+        h('p', { class: 'page-foot' }, h('a', { class: 'btn btn-primary', href: '#/' }, t.goHome)),
       ),
     ),
   );

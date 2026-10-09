@@ -542,6 +542,32 @@ rt {
   line-height: 1.2;
 }
 
+/* スタンプカードとヤマネコカードのページの「ホーム」ボタン */
+.back.home-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.5rem;
+  padding: 0 1rem 0 0.75rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.home-btn span {
+  font-size: 1.4em;
+  line-height: 1;
+  transform: translateY(-0.06em);
+}
+
+.page-foot {
+  margin-top: 2rem;
+  text-align: center;
+}
+
 .stamps-page .bar,
 .stamps-main {
   max-width: 44rem;
