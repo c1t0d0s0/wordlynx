@@ -7,6 +7,14 @@ export const MONTH_POINTS = 5000;
 export const WEEK_LENGTH = 7;
 /** ステージや今日のパズルを 1 つクリアするともらえるポイント (同じパズルでは 1 回だけ) */
 export const CLEAR_POINTS = 20;
+/** むずかしいチャレンジ (ステージ 9・10。初級も上級も) をクリアするともらえるポイント */
+export const CHALLENGE_POINTS = 200;
+
+/** そのパズルをクリアするともらえるポイント */
+export function clearPoints(puzzleId: string): number {
+  return /^(easy-)?stage-(9|10)$/.test(puzzleId) ? CHALLENGE_POINTS : CLEAR_POINTS;
+}
+
 /** 1 つのパズルで、ポイントなしで使えるヒントの回数 */
 export const FREE_HINTS = 5;
 /** それより多くヒントを使うときに、1 回ごとにいるポイント */

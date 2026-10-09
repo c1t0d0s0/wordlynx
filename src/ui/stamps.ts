@@ -1,13 +1,26 @@
 import { jstDate } from '../core/puzzle';
 import { WEEK_LENGTH, currentRun, monthView } from '../core/rewards';
-import { balance, getStamps } from '../core/storage';
+import { balance, getMode, getStamps } from '../core/storage';
 import { h, hanamaru } from './dom';
-import type { Text } from './text';
+import { TEXT, type Text } from './text';
 
 const WEEKDAYS = '日月火水木金土';
 
-/** タイトル画面のスタンプカード。今月のカレンダーに、クリアした日のスタンプをならべる */
-export function stampCard(t: Text): HTMLElement {
+/** スタンプカードだけを大きく見るページ。今日のパズルをクリアしたあとに案内する */
+export function renderStamps(root: HTMLElement): void {
+  const t = TEXT[getMode()];
+  root.replaceChildren(
+    h(
+      'div',
+      { class: 'stamps-page' },
+      h('header', { class: 'bar' }, h('a', { class: 'back', href: '#/' }, '‹ ホーム'), h('h1', {}, t.stampTitle), h('span', {})),
+      h('main', { class: 'stamps-main' }, stampCard(t, true)),
+    ),
+  );
+}
+
+/** スタンプカード。今月のカレンダーに、クリアした日のスタンプをならべる */
+export function stampCard(t: Text, standalone = false): HTMLElement {
   const today = jstDate();
   const month = today.slice(0, 7);
   const todayNum = Number(today.slice(8));
@@ -40,7 +53,8 @@ export function stampCard(t: Text): HTMLElement {
     h(
       'div',
       { class: 'stamp-head' },
-      h('h2', { id: 'stamp-title' }, t.stampTitle),
+      // ページの見出しとかさなるので、スタンプカードのページでは月だけを出す
+      standalone ? h('h2', { id: 'stamp-title', class: 'visually-hidden' }, t.stampTitle) : h('h2', { id: 'stamp-title' }, t.stampTitle),
       h('span', { class: 'stamp-month' }, t.stampMonth(Number(month.slice(5)))),
     ),
     grid,

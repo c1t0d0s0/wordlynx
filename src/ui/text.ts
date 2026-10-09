@@ -1,5 +1,5 @@
 import type { Dir, Mode, Pos } from '../core/puzzle';
-import { CLEAR_POINTS, FREE_HINTS, HINT_COST, MONTH_POINTS, WEEK_LENGTH, WEEK_POINTS } from '../core/rewards';
+import { CHALLENGE_POINTS, CLEAR_POINTS, FREE_HINTS, HINT_COST, MONTH_POINTS, WEEK_LENGTH, WEEK_POINTS } from '../core/rewards';
 
 /** 画面の文言。初級モードは、3 年生までに習う漢字だけを使い、分かち書きにする */
 export interface Text {
@@ -57,6 +57,8 @@ export interface Text {
   points: (n: number) => string;
   pointsLabel: string;
   seeCards: string;
+  seeStamps: string;
+  rewardLinks: string;
   cardsTitle: string;
   cardsLead: string;
   cardsOwned: (n: number, total: number) => string;
@@ -83,7 +85,7 @@ const standard: Text = {
   review: 'もういちど見る',
   stages: 'ステージ',
   challenge: 'チャレンジ',
-  challengeNote: 'たて20マス、よこ20マスの大きな盤面。時間のあるときにどうぞ。',
+  challengeNote: `たて20マス、よこ20マスの大きな盤面。クリアすると${CHALLENGE_POINTS}pt。時間のあるときにどうぞ。`,
   playing: 'とちゅう',
   cleared: 'クリア',
   words: (n) => `${n}語`,
@@ -134,7 +136,7 @@ const standard: Text = {
     run > 0
       ? `${run}日つづいているよ。あと${left}日で${WEEK_POINTS}pt。`
       : '今日のパズルをクリアすると、スタンプを1こおせるよ。',
-  stampRule: `パズルを1つクリアすると${CLEAR_POINTS}pt。今日のパズルを${WEEK_LENGTH}日つづけるたびに${WEEK_POINTS}pt、1日から月のさいごの日まで全部そろうと、さらに${MONTH_POINTS}pt。`,
+  stampRule: `パズルを1つクリアすると${CLEAR_POINTS}pt（チャレンジは${CHALLENGE_POINTS}pt）。今日のパズルを${WEEK_LENGTH}日つづけるたびに${WEEK_POINTS}pt、1日から月のさいごの日まで全部そろうと、さらに${MONTH_POINTS}pt。`,
   stampDone: 'スタンプをおしたよ',
   rewardClear: (points) => `クリア！ +${points}pt`,
   rewardWeek: (run) => `${run}日つづいた！ +${WEEK_POINTS}pt`,
@@ -142,6 +144,8 @@ const standard: Text = {
   points: (n) => `${n.toLocaleString('ja-JP')}pt`,
   pointsLabel: '持っているポイント',
   seeCards: 'カードを見る',
+  seeStamps: 'スタンプカードを見る',
+  rewardLinks: 'スタンプカードとヤマネコカード',
   cardsTitle: 'ヤマネコカード',
   cardsLead: 'ポイントをためて、ヤマネコのカードを集めよう。',
   cardsOwned: (n, total) => `${n} / ${total}まい`,
@@ -155,7 +159,7 @@ const standard: Text = {
 const easy: Text = {
   ...standard,
   lead: 'クロスワードパズル',
-  challengeNote: 'たて20マス、よこ20マスの 大きな パズル。時間の ある ときに どうぞ。',
+  challengeNote: `たて20マス、よこ20マスの 大きな パズル。クリアすると ${CHALLENGE_POINTS}pt。時間の ある ときに どうぞ。`,
   words: (n) => `${n}こ`,
   howtoItems: [
     'マスを えらんで、ヒントに 合う 言葉を ひらがなで 入れます。',

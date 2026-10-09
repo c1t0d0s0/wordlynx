@@ -45,7 +45,10 @@ export function openResult(puzzle: Puzzle, opts: { celebrate: boolean; mode: Mod
           stamp && stamp.weekPoints > 0 && h('p', { class: 'result-reward' }, t.rewardWeek(stamp.run)),
           stamp && stamp.monthPoints > 0 && h('p', { class: 'result-reward' }, t.rewardMonth(opts.month ?? 0)),
           gained > 0 && h('p', { class: 'result-balance' }, `${t.pointsLabel} ${t.points(balance())}`),
-          gained > 0 && h('a', { class: 'btn', href: '#/cards' }, t.seeCards),
+          // 今日のパズルのあとは、スタンプがたまった様子を見られるスタンプカードへ案内する
+          opts.stamp
+            ? h('a', { class: 'btn', href: '#/stamps' }, t.seeStamps)
+            : gained > 0 && h('a', { class: 'btn', href: '#/cards' }, t.seeCards),
         )
       : null;
 

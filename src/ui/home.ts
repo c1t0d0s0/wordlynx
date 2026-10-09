@@ -1,11 +1,10 @@
 import { dailyId } from '../core/generator';
 import { jstDate, type Mode, type Puzzle } from '../core/puzzle';
-import { currentStreak, getMode, pruneOldDaily, setMode, statusOf } from '../core/storage';
+import { balance, currentStreak, getMode, pruneOldDaily, setMode, statusOf } from '../core/storage';
 import presetsEasy from '../data/presets-easy.json';
 import presets from '../data/presets.json';
 import { h, hanamaru } from './dom';
 import { lynx } from './lynx';
-import { stampCard } from './stamps';
 import { TEXT, type Text } from './text';
 
 const STAGES: Record<Mode, Puzzle[]> = {
@@ -64,9 +63,11 @@ function stageTile(stage: Puzzle, index: number, mode: Mode, t: Text): HTMLEleme
     'a',
     { class: `tile tile-${status}`, href: link(mode, `stage/${index + 1}`) },
     h('span', { class: 'tile-num' }, String(index + 1)),
-    h('span', { class: 'tile-meta' }, t.words(stage.entries.length)),
+    // 横長のタイルは 2 行分しか入らないので、遊んだあとは語数のかわりに「クリア」「とちゅう」を出す
+    status === 'new'
+      ? h('span', { class: 'tile-meta' }, t.words(stage.entries.length))
+      : h('span', { class: 'tile-meta tile-status' }, status === 'done' ? t.cleared : t.playing),
     status === 'done' ? hanamaru('hanamaru hanamaru-small') : null,
-    status !== 'new' && h('span', { class: 'tile-status' }, status === 'done' ? t.cleared : t.playing),
   );
 }
 
@@ -106,7 +107,18 @@ export function renderHome(root: HTMLElement): void {
         dailyStatus === 'done' ? hanamaru('hanamaru hanamaru-daily') : null,
         h('a', { class: 'btn btn-primary', href: link(mode, 'daily') }, dailyAction),
       ),
-      stampCard(t),
+      // スタンプカードとヤマネコカードは、それぞれのページで見る
+      h(
+        'nav',
+        { class: 'reward-links', 'aria-label': t.rewardLinks },
+        h('p', { class: 'points' }, h('span', { class: 'points-label' }, t.pointsLabel), h('b', { class: 'points-num' }, t.points(balance()))),
+        h(
+          'div',
+          { class: 'reward-buttons' },
+          h('a', { class: 'btn', href: '#/stamps' }, t.stampTitle),
+          h('a', { class: 'btn', href: '#/cards' }, t.cardsTitle),
+        ),
+      ),
       h(
         'section',
         { 'aria-labelledby': 'stage-title' },

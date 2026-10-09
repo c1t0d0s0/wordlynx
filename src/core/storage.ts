@@ -1,5 +1,5 @@
 import { addDays, puzzleSignature, type Mode, type Puzzle } from './puzzle';
-import { CLEAR_POINTS, earnedPoints, normalizeStamps, rewardFor, type StampReward } from './rewards';
+import { clearPoints, earnedPoints, normalizeStamps, rewardFor, type StampReward } from './rewards';
 
 const PREFIX = 'wordlynx:v1:';
 
@@ -174,13 +174,13 @@ export function addClear(puzzleId: string): number {
   const clears = getClears();
   if (clears.includes(puzzleId)) return 0;
   write('clears', [...clears, puzzleId]);
-  return CLEAR_POINTS;
+  return clearPoints(puzzleId);
 }
 
 /** 今つかえるポイント = クリアとスタンプでもらった分 − カードやヒントに使った分 */
 export function balance(): number {
   return (
-    getClears().length * CLEAR_POINTS +
+    getClears().reduce((sum, id) => sum + clearPoints(id), 0) +
     earnedPoints(getStamps()).total -
     getCards().reduce((sum, c) => sum + c.paid, 0) -
     spentOnHints()

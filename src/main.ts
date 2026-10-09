@@ -6,6 +6,7 @@ import { EASY_WORDS, WORDS } from './data/words';
 import { renderCards } from './ui/cards';
 import { renderGame } from './ui/game';
 import { renderHome, stageByNumber } from './ui/home';
+import { renderStamps } from './ui/stamps';
 import { TEXT } from './ui/text';
 
 // 前から遊んでいた人の記録を、スタンプとポイントに引きつぐ (最初の 1 回だけ)
@@ -33,6 +34,8 @@ function route(): void {
     cleanup = renderGame(app, stage, num > 8 ? t.challengeTitle(num) : t.stageTitle(num), mode);
   } else if (location.hash === '#/cards') {
     renderCards(app);
+  } else if (location.hash === '#/stamps') {
+    renderStamps(app);
   } else {
     renderHome(app);
   }

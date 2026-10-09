@@ -347,8 +347,11 @@ rt {
   display: grid;
   align-content: center;
   justify-items: center;
-  aspect-ratio: 1;
-  padding: 0.25rem;
+  /* 横長にして、タイトル画面のたての長さをおさえる。
+     はばは列で決まるので、高さだけを指定する (せまい画面でも数字と 1 行が入る高さはたもつ) */
+  height: clamp(3.1rem, 14vw, 6.5rem);
+  min-width: 0;
+  padding: 0.2rem;
   background: var(--paper);
   box-shadow: 0 0 0 1px var(--rule);
   text-decoration: none;
@@ -356,7 +359,7 @@ rt {
 }
 
 .tiles-big .tile {
-  aspect-ratio: 2.4;
+  height: clamp(3.1rem, 13vw, 6rem);
 }
 
 .tile:hover {
@@ -366,22 +369,19 @@ rt {
 .tile-num {
   font-family: var(--hand);
   font-weight: 600;
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 5.5vw, 2rem);
   line-height: 1.1;
 }
 
 .tile-meta {
   color: var(--muted);
   font-size: 0.75rem;
+  line-height: 1.3;
   white-space: nowrap;
 }
 
 .tile-status {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.4rem;
   color: var(--red);
-  font-size: 0.6875rem;
   font-weight: 700;
 }
 
@@ -412,6 +412,25 @@ rt {
   color: var(--muted);
   font-size: 0.9375rem;
   max-width: 38rem;
+}
+
+/* タイトル画面の、スタンプカードとヤマネコカードへの入り口 */
+.reward-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-top: -1rem;
+  padding: 0.8rem 1.25rem;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.reward-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 /* ---- スタンプカード ---- */
@@ -521,6 +540,29 @@ rt {
   font-weight: 600;
   font-size: 1.5rem;
   line-height: 1.2;
+}
+
+.stamps-page .bar,
+.stamps-main {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.stamps-main {
+  padding: 0.5rem 1rem 4rem;
+}
+
+.stamps-main .stamp {
+  margin-top: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* ---- ヤマネコカード ---- */

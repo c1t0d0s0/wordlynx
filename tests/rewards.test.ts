@@ -150,6 +150,17 @@ describe('クリアのポイント', () => {
     expect(balance()).toBe(100);
   });
 
+  it('チャレンジ (ステージ 9・10) は 200pt。初級も上級も同じ', () => {
+    expect(addClear('stage-8')).toBe(20);
+    expect(addClear('stage-9')).toBe(200);
+    expect(addClear('stage-10')).toBe(200);
+    expect(addClear('easy-stage-9')).toBe(200);
+    expect(addClear('easy-stage-10')).toBe(200);
+    expect(addClear('easy-stage-1')).toBe(20);
+    expect(addClear('stage-9')).toBe(0); // 2 回目はもらえない
+    expect(balance()).toBe(840);
+  });
+
   it('スタンプのポイントと合わせてたまり、カードと交換できる', () => {
     for (const d of days('2026-10-03', 7)) {
       addStamp(d);
