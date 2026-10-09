@@ -100,7 +100,8 @@ export function playClear(words: string[]): Promise<void> {
         .finished.catch(() => {});
       if (finished) return;
 
-      // ばくはつ: 光の輪が広がり、字がばらばらに飛びちる
+      // ばくはつ: 輪が広がり、字がばらばらに飛びちる
+      // (画面全体を光らせたり暗くしたりはしない。ちかちかして気分が悪くなるため)
       const ring = h('span', { class: 'fx-ring' });
       overlay.append(ring);
       ring
@@ -112,7 +113,6 @@ export function playClear(words: string[]): Promise<void> {
           { duration: boomMs, easing: 'ease-out', fill: 'forwards' },
         )
         .finished.then(() => ring.remove(), () => {});
-      overlay.animate([{ background: 'rgb(255 244 180 / 0.75)' }, { background: 'rgb(20 33 28 / 0.45)' }], { duration: boomMs * 0.6 });
       playBoom(many ? 0.45 : 0.9);
       burst(many ? 14 : 34, reach, boomMs * 1.4);
 
@@ -136,10 +136,14 @@ export function playClear(words: string[]): Promise<void> {
     };
 
     void (async () => {
+      // 次の言葉は、前の言葉がふくらみきるころに出す。
+      // 前のアニメーションが終わるのを待つと、言葉が多いステージで少しずつおくれて長くなるので、時間で区切る
       for (const word of words) {
         if (finished) return;
-        await showWord(word);
+        void showWord(word);
+        await new Promise((r) => setTimeout(r, growMs));
       }
+      await new Promise((r) => setTimeout(r, 120));
       if (finished) return;
       // さいごに、いちばん大きな花火
       playFinale();
