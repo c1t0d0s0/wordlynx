@@ -11,10 +11,11 @@ import easyAdjectives from './vocab-easy/adjectives';
 import easyOthers from './vocab-easy/others';
 
 /**
- * 1 行 1 語。「よみ|漢字まじりの書き方|カギ|例文」の順に書く。
+ * 1 行 1 語。「よみ|漢字まじりの書き方|カギ|例文|例文|例文…」の順に書く。
  * - 漢字まじりの書き方がない語は 2 つめを空にする
  * - カギでふりがなを付けたいときは 漢字(かんじ) と半角かっこで書く。注記は全角かっこ（）を使う
  * - 例文の答えが入るところは 〇〇
+ * - 例文はいくつ書いてもよい。同じ言葉がまた出たときに、ちがう例文になるようにするため
  */
 function parse(pos: Pos, text: string): Word[] {
   return text
@@ -22,8 +23,8 @@ function parse(pos: Pos, text: string): Word[] {
     .map((line) => line.trim())
     .filter((line) => line !== '')
     .map((line) => {
-      const [reading, kanji, clue, example] = line.split('|');
-      return { reading, kanji, pos, clue, example };
+      const [reading, kanji, clue, ...examples] = line.split('|');
+      return { reading, kanji, pos, clue, example: examples[0], examples };
     });
 }
 

@@ -73,6 +73,27 @@ describe('生成', () => {
     expect(JSON.stringify(a)).not.toBe(JSON.stringify(c));
   });
 
+  it('例文は、その言葉の例文の中から 1 つがえらばれ、同じ日なら同じものになる', () => {
+    const byReading = new Map(WORDS.map((w) => [w.reading, w]));
+    const picked = new Map<string, Set<string>>();
+    let date = '2026-01-01';
+    for (let i = 0; i < 200; i++) {
+      const p = generateDaily(WORDS, date);
+      for (const e of p.entries) {
+        const word = byReading.get(e.word.reading)!;
+        expect(word.examples).toContain(e.word.example);
+        expect('examples' in e.word).toBe(false); // 問題の中には、えらんだ 1 つだけを入れる
+        if (!picked.has(word.reading)) picked.set(word.reading, new Set());
+        picked.get(word.reading)!.add(e.word.example);
+      }
+      expect(JSON.stringify(generateDaily(WORDS, date))).toBe(JSON.stringify(p));
+      date = addDays(date, 1);
+    }
+    // 何度も出た言葉では、ちがう例文が使われている
+    const repeated = [...picked.values()].filter((set) => set.size > 1).length;
+    expect(repeated).toBeGreaterThan(50);
+  }, 120_000);
+
   it('1 年分のデイリーがすべて正しく作れる', () => {
     let date = '2026-01-01';
     for (let i = 0; i < 365; i++) {

@@ -11,8 +11,10 @@ export interface Word {
   pos: Pos;
   /** カギ (意味)。「漢字(かんじ)」と書くとふりがなになる */
   clue: string;
-  /** 例文。答えが入るところは 〇〇 */
+  /** 例文。答えが入るところは 〇〇。例文がいくつかある言葉は、問題を作るときにその中から 1 つをえらんで入れる */
   example: string;
+  /** その言葉の例文すべて (語彙データにだけある。作った問題の中には入れない) */
+  examples?: string[];
 }
 
 export interface Entry {

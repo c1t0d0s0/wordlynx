@@ -16,9 +16,15 @@ describe('語彙データ', () => {
     expect(w.clue).toBeTruthy();
     expect(w.clue).not.toContain(w.reading);
     if (w.kanji) expect(w.clue).not.toContain(w.kanji);
-    expect(w.example.split('〇〇').length).toBe(2);
-    expect(w.example).not.toContain(w.reading);
-    if (w.kanji) expect(w.example).not.toContain(w.kanji);
+    // 例文は 1 語につき 3 つ以上。同じ言葉がまた出たときに、ちがう例文を出せるようにする
+    expect(w.examples!.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(w.examples).size).toBe(w.examples!.length);
+    expect(w.example).toBe(w.examples![0]);
+    for (const example of w.examples!) {
+      expect(example.split('〇〇').length, example).toBe(2);
+      expect(example, example).not.toContain(w.reading);
+      if (w.kanji) expect(example, example).not.toContain(w.kanji);
+    }
   });
 
   it('盤面に入る形が重複しない', () => {
@@ -47,14 +53,16 @@ describe('初級モードの語彙', () => {
     expect(w.reading.length).toBeGreaterThanOrEqual(2);
     expect(w.reading.length).toBeLessThanOrEqual(6);
     // カギと例文に使う漢字は 3 年生までに習うものだけ
-    expect(kanjiBeyondGrade3(w.clue + w.example)).toEqual([]);
+    expect(kanjiBeyondGrade3(w.clue + w.examples!.join(''))).toEqual([]);
     expect(w.clue).toBeTruthy();
     expect(w.clue).not.toContain(w.reading);
-    expect(w.example.split('〇〇').length).toBe(2);
-    expect(w.example).not.toContain(w.reading);
-    if (w.kanji) {
-      expect(w.clue).not.toContain(w.kanji);
-      expect(w.example).not.toContain(w.kanji);
+    if (w.kanji) expect(w.clue).not.toContain(w.kanji);
+    expect(w.examples!.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(w.examples).size).toBe(w.examples!.length);
+    for (const example of w.examples!) {
+      expect(example.split('〇〇').length, example).toBe(2);
+      expect(example, example).not.toContain(w.reading);
+      if (w.kanji) expect(example, example).not.toContain(w.kanji);
     }
   });
 

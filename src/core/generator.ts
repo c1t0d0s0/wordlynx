@@ -1,6 +1,6 @@
 import { normalizeKana } from './kana';
 import type { Dir, Entry, Mode, Puzzle, Word } from './puzzle';
-import { type Rng, rngFromString, shuffle } from './rng';
+import { type Rng, hashString, rngFromString, shuffle } from './rng';
 
 interface Placed {
   word: Word;
@@ -154,7 +154,17 @@ function balance(b: Board): number {
   return Math.min(...quads);
 }
 
-function toPuzzle(id: string, b: Board): Puzzle {
+/**
+ * 問題に入れる言葉。例文がいくつかあるときは、問題ごとに 1 つをえらぶ。
+ * 盤面の形を決める乱数とは別に、「問題の種 + 言葉」だけで決めるので、例文を足しても盤面は変わらない。
+ */
+function wordFor(word: Word, seed: string): Word {
+  const { examples, ...rest } = word;
+  if (!examples || examples.length < 2) return rest;
+  return { ...rest, example: examples[hashString(`${seed}:${word.reading}`) % examples.length] };
+}
+
+function toPuzzle(id: string, b: Board, seed: string): Puzzle {
   const starts = new Map<number, number>();
   const sorted = b.placed
     .slice()
@@ -163,7 +173,7 @@ function toPuzzle(id: string, b: Board): Puzzle {
   const entries: Entry[] = sorted.map((p) => {
     const idx = p.row * b.size + p.col;
     if (!starts.has(idx)) starts.set(idx, next++);
-    return { num: starts.get(idx)!, dir: p.dir, row: p.row, col: p.col, answer: p.answer, word: p.word };
+    return { num: starts.get(idx)!, dir: p.dir, row: p.row, col: p.col, answer: p.answer, word: wordFor(p.word, seed) };
   });
   return { id, size: b.size, entries };
 }
@@ -192,7 +202,7 @@ export function generate(words: readonly Word[], opts: GenerateOptions): Puzzle 
       best = b;
     }
   }
-  return toPuzzle(id, best!);
+  return toPuzzle(id, best!, seed);
 }
 
 export const DAILY_SIZE = 10;
