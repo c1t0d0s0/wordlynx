@@ -61,6 +61,19 @@ export interface Text {
   rewardLinks: string;
   soundOn: string;
   soundOff: string;
+  // ログインと記録の保存 (ログインは保護者がすることも多いが、文は子どもにも読める表記にする)
+  accountTitle: string;
+  accountNote: string;
+  signIn: string;
+  signedIn: string;
+  signOut: string;
+  syncLoading: string;
+  syncSaving: string;
+  syncSaved: string;
+  syncOffline: string;
+  askMigrate: string;
+  signOutUnsynced: string;
+  signInFailed: string;
   cardsTitle: string;
   cardsLead: string;
   cardsOwned: (n: number, total: number) => string;
@@ -150,6 +163,19 @@ const standard: Text = {
   rewardLinks: 'スタンプカードとヤマネコカード',
   soundOn: '音：オン',
   soundOff: '音：オフ',
+  accountTitle: 'きろくの ほぞん',
+  accountNote: 'Googleで ログインすると、ほかの ブラウザや たんまつでも 同じ きろくで 遊べます。ログインしなくても 遊べます。',
+  signIn: 'Googleで ログイン',
+  signedIn: 'ログイン中',
+  signOut: 'ログアウト',
+  syncLoading: 'たしかめています…',
+  syncSaving: 'ほぞん中…',
+  syncSaved: 'ほぞんずみ',
+  syncOffline: 'まだ ほぞんできていません。つながったら ほぞんします。',
+  askMigrate:
+    'この たんまつの きろくを アカウントに うつしますか？\n\n「OK」… うつす (アカウントの きろくと 合わせます)\n「キャンセル」… うつさない (たんまつの きろくは そのまま のこります)',
+  signOutUnsynced: 'まだ ほぞんできていない きろくが あります。今 ログアウトすると、その分は なくなります。ログアウトしますか？',
+  signInFailed: 'ログインできませんでした。もういちど ためしてください。',
   cardsTitle: 'ヤマネコカード',
   cardsLead: 'ポイントをためて、ヤマネコのカードを集めよう。',
   cardsOwned: (n, total) => `${n} / ${total}まい`,

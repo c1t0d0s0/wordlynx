@@ -334,7 +334,7 @@ export function renderGame(
     }
     // 無料の回数を使い切ったら、1 回ごとにポイントがいる
     const paid = hintsUsed() >= FREE_HINTS;
-    if (paid && !spendPoints(HINT_COST)) {
+    if (paid && !spendPoints(HINT_COST, puzzle.id)) {
       status.textContent = t.hintShort(balance());
       return;
     }

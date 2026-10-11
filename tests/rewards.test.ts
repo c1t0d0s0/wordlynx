@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addDays } from '../src/core/puzzle';
-import { currentRun, earnedPoints, monthView, rewardFor } from '../src/core/rewards';
-import { addClear, addStamp, balance, buyCard, getCards, getClears, getMode, getStamps, migrateMode, migrateRewards, setMode, recordDailyClear, spendPoints } from '../src/core/storage';
+import { CHALLENGE_POINTS, CLEAR_POINTS, currentRun, earnedPoints, monthView, rewardFor } from '../src/core/rewards';
+import { addClear, addStamp, balance, buyCard, getCards, getClears, getMode, getStamps, migrateCardPrices, migrateMode, migrateRewards, setMode, recordDailyClear, spendPoints } from '../src/core/storage';
 import { CARDS } from '../src/data/cards';
 import { kanjiBeyondGrade3 } from './kanji';
 
@@ -104,20 +104,19 @@ describe('スタンプとカードの保存', () => {
 
   it('カードと交換するとポイントがへる', () => {
     days('2026-10-03', 7).forEach((d) => addStamp(d));
-    const [cheap, next] = CARDS;
-    expect(buyCard(next)).toBe(true); // 1000pt
-    expect(balance()).toBe(0);
-    expect(buyCard(cheap)).toBe(false); // 足りない
-    expect(buyCard(next)).toBe(false); // もう持っている
-    expect(getCards()).toEqual([{ id: next.id, paid: 1000 }]);
-  });
-
-  it('100pt のカードは 1000pt から交換でき、900pt のこる', () => {
-    days('2026-10-03', 7).forEach((d) => addStamp(d));
-    expect(buyCard(CARDS[0])).toBe(true);
-    expect(balance()).toBe(900);
-    expect(buyCard(CARDS[0])).toBe(false);
-    expect(balance()).toBe(900);
+    // 7 日つづいて 1000pt。800pt のカードと交換すると 200pt のこる
+    const card = CARDS[4];
+    expect(card.price).toBe(800);
+    expect(buyCard(card)).toBe(true);
+    expect(balance()).toBe(200);
+    expect(buyCard(card)).toBe(false); // もう持っている
+    expect(buyCard(CARDS[3])).toBe(false); // 500pt には足りない
+    expect(buyCard(CARDS[1])).toBe(true); // 80pt は交換できる
+    expect(balance()).toBe(120);
+    expect(getCards()).toEqual([
+      { id: card.id, paid: 800 },
+      { id: CARDS[1].id, paid: 80 },
+    ]);
   });
 
   it('これまでの連続クリアをスタンプとして引きつぐ', () => {
@@ -167,15 +166,16 @@ describe('クリアのポイント', () => {
       addClear(`daily-${d}`);
     }
     expect(balance()).toBe(1000 + 7 * 20);
-    expect(buyCard(CARDS[1])).toBe(true); // 1000pt
-    expect(buyCard(CARDS[0])).toBe(true); // 100pt
-    expect(balance()).toBe(40);
+    // 1140pt で、はじめの 4 枚 (40 + 80 + 300 + 500 = 920pt) をまとめて交換できる
+    for (const card of CARDS.slice(0, 4)) expect(buyCard(card)).toBe(true);
+    expect(balance()).toBe(220);
+    expect(buyCard(CARDS[4])).toBe(false); // 5 枚目 (800pt) にはまだ足りない
   });
 
-  it('5 つクリアすれば、スタンプがなくても 100pt のカードと交換できる', () => {
-    for (let i = 1; i <= 4; i++) addClear(`stage-${i}`);
-    expect(buyCard(CARDS[0])).toBe(false); // 80pt
-    addClear('stage-5');
+  it('2 つクリアすれば、スタンプがなくても 1 枚目のカード (40pt) と交換できる', () => {
+    addClear('stage-1');
+    expect(buyCard(CARDS[0])).toBe(false); // 20pt
+    addClear('stage-2');
     expect(buyCard(CARDS[0])).toBe(true);
     expect(balance()).toBe(0);
   });
@@ -210,11 +210,22 @@ describe('ヒントに使うポイント', () => {
     expect(balance()).toBe(0);
   });
 
-  it('ヒントに使った分は、カードの交換にも使えない', () => {
+  it('パズルごとに記録する。前に 1 つの数字で持っていた分も引きつぐ', () => {
     for (let i = 1; i <= 5; i++) addClear(`stage-${i}`); // 100pt
+    store.set('wordlynx:v1:spent', '30'); // 前の形
+    expect(balance()).toBe(70);
+    expect(spendPoints(10, 'stage-1')).toBe(true);
+    expect(spendPoints(10, 'stage-1')).toBe(true);
+    expect(spendPoints(10, 'stage-2')).toBe(true);
+    expect(JSON.parse(store.get('wordlynx:v1:spent')!)).toEqual({ '(before)': 30, 'stage-1': 20, 'stage-2': 10 });
+    expect(balance()).toBe(40);
+  });
+
+  it('ヒントに使った分は、カードの交換にも使えない', () => {
+    for (let i = 1; i <= 2; i++) addClear(`stage-${i}`); // 40pt
     expect(spendPoints(10)).toBe(true);
-    expect(buyCard(CARDS[0])).toBe(false); // 90pt では 100pt のカードに足りない
-    addClear('stage-6');
+    expect(buyCard(CARDS[0])).toBe(false); // 30pt では 40pt のカードに足りない
+    addClear('stage-3');
     expect(buyCard(CARDS[0])).toBe(true);
     expect(balance()).toBe(10);
   });
@@ -268,13 +279,11 @@ describe('カード', () => {
     expect(new Set(CARDS.map((c) => c.name)).size).toBe(20);
   });
 
-  it('100pt は 1 枚だけで、だんだん高くなり、いちばん高いのは 10000pt', () => {
+  it('値段は安い順にだんだん高くなり、合計は 28,420pt', () => {
     const prices = CARDS.map((c) => c.price);
-    expect(prices[0]).toBe(100);
-    expect(prices.filter((p) => p === 100)).toHaveLength(1);
-    expect(prices[1]).toBe(1000);
-    expect(prices[prices.length - 1]).toBe(10000);
+    expect(prices).toEqual([40, 80, 300, 500, 800, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2200, 2400, 2600, 3000]);
     for (let i = 1; i < prices.length; i++) expect(prices[i]).toBeGreaterThan(prices[i - 1]);
+    expect(TOTAL).toBe(28420);
   });
 
   it('見た目がすべてちがう', () => {
@@ -283,5 +292,119 @@ describe('カード', () => {
 
   it('名前の漢字は 3 年生まで', () => {
     for (const c of CARDS) expect(kanjiBeyondGrade3(c.name), c.name).toEqual([]);
+  });
+});
+
+// ---- カードの値段のバランス ----
+// ポイントのもらい方から、「何日目に何枚持てるか」を計算して確かめる
+
+const TOTAL = CARDS.reduce((sum, c) => sum + c.price, 0);
+
+/** start から n 日つづけてクリアした人が、n 日目までにもらうポイント */
+function income(start: string, n: number, perDay: number, stagePoints: number): number {
+  return earnedPoints(days(start, n)).total + n * perDay + stagePoints;
+}
+
+/** 安い順に買っていったとき、points で何枚持てるか */
+function affordable(points: number): number {
+  let left = points;
+  let count = 0;
+  for (const card of CARDS) {
+    if (left < card.price) break;
+    left -= card.price;
+    count++;
+  }
+  return count;
+}
+
+// 初級の今日のパズルだけを毎日クリアする人 (ステージは遊ばない)。
+// 月の途中の 10/16 から始めるので、92 日目 (1/15) までに「1 か月そろった」は 11 月と 12 月の 2 回
+const EASY_START = '2026-10-16';
+const easyOnly = (n: number) => income(EASY_START, n, CLEAR_POINTS, 0);
+// いちばん多くもらえる人: 初級・上級の今日のパズルを毎日、全 20 ステージも最初の日にクリア
+const ALL_STAGES = 2 * (8 * CLEAR_POINTS + 2 * CHALLENGE_POINTS);
+const maxPlayer = (start: string, n: number) => income(start, n, 2 * CLEAR_POINTS, ALL_STAGES);
+
+describe('カードの値段のバランス', () => {
+  it('初級を毎日の人は、はじめの 5 枚を 2 週間以内に手に入れられる', () => {
+    const owned = (day: number) => affordable(easyOnly(day));
+    expect(owned(1)).toBe(0);
+    expect(owned(2)).toBe(1);
+    expect(owned(6)).toBe(2);
+    expect(owned(7)).toBe(4);
+    expect(owned(13)).toBe(4);
+    expect(owned(14)).toBe(5);
+  });
+
+  it('そのあとは、1 枚ごとに少しずつ時間がかかる', () => {
+    // 月そろいの 5000pt が入らない、いちばんおそい場合で数える (1 日 20pt と 7 日ごとの 1000pt だけ)
+    const slow = (n: number) => n * CLEAR_POINTS + Math.floor(n / 7) * 1000;
+    const dayOf = (count: number) => {
+      let day = 1;
+      while (affordable(slow(day)) < count) day++;
+      return day;
+    };
+    expect([6, 7, 8, 9, 10].map(dayOf)).toEqual([21, 28, 35, 42, 49]);
+    const gaps = Array.from({ length: 15 }, (_, i) => dayOf(i + 6) - dayOf(i + 5)); // 6〜20 枚目
+    for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(7);
+    const average = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    // 後ろのカードほど、前のカードからの日数が長い
+    expect(average(gaps.slice(10))).toBeGreaterThan(average(gaps.slice(5, 10)));
+    expect(average(gaps.slice(5, 10))).toBeGreaterThan(average(gaps.slice(0, 5)));
+    // 6〜10 枚目は 7 日に 1 枚、最後の 5 枚は平均でその 2 倍
+    expect(gaps.slice(0, 5)).toEqual([7, 7, 7, 7, 7]);
+    expect(average(gaps.slice(10))).toBeGreaterThanOrEqual(14);
+  });
+
+  it('いちばん多くもらえる人でも、いつ始めても 88 日目までには全部そろわない', () => {
+    // うるう年もふくめ、2 年分の開始日をすべて試す
+    let start = '2027-01-01';
+    let fastest = Infinity;
+    for (let i = 0; i < 731; i++) {
+      // 日がたつほどポイントはふえるので、88 日目で足りなければ、それより前も足りない
+      expect(maxPlayer(start, 88), `${start} から 88 日目`).toBeLessThan(TOTAL);
+      let n = 89;
+      while (maxPlayer(start, n) < TOTAL) n++;
+      fastest = Math.min(fastest, n);
+      start = addDays(start, 1);
+    }
+    // いちばん早いのは、2/1 から始めて 4/30 に 3 か月分がそろう 89 日目
+    expect(fastest).toBe(89);
+    expect(maxPlayer('2027-02-01', 89)).toBeGreaterThanOrEqual(TOTAL);
+  }, 60_000);
+
+  it('「1 か月そろった」が 3 回ないと、全部は集まらない', () => {
+    // 10/1 から始めた人の、12/31 (92 日目) の前の日まで
+    expect(maxPlayer('2026-10-01', 91)).toBe(27760);
+    expect(maxPlayer('2026-10-01', 91)).toBeLessThan(TOTAL);
+    expect(maxPlayer('2026-10-01', 92)).toBeGreaterThanOrEqual(TOTAL);
+  });
+
+  it('月の 1 日から始めれば、初級だけを毎日の人も 3 か月目の末に全部そろう', () => {
+    expect(income('2026-10-01', 91, CLEAR_POINTS, 0)).toBeLessThan(TOTAL);
+    expect(income('2026-10-01', 92, CLEAR_POINTS, 0)).toBe(29840);
+    expect(income('2026-10-01', 92, CLEAR_POINTS, 0)).toBeGreaterThanOrEqual(TOTAL);
+  });
+
+  it('月の途中から始めた初級だけの人も、4 か月ほどで全部そろう', () => {
+    let n = 1;
+    while (easyOnly(n) < TOTAL) n++;
+    expect(n).toBeGreaterThan(92);
+    expect(n).toBeLessThanOrEqual(125);
+  });
+
+  it('値下げ前に高い値段で交換していた人には、差額がもどる', () => {
+    days('2026-10-03', 14).forEach((d) => addStamp(d)); // 2000pt
+    store.set('wordlynx:v1:cards', JSON.stringify([{ id: 'c01', paid: 100 }, { id: 'c02', paid: 1000 }]));
+    expect(balance()).toBe(900);
+    migrateCardPrices(CARDS);
+    expect(getCards()).toEqual([{ id: 'c01', paid: 40 }, { id: 'c02', paid: 80 }]);
+    expect(balance()).toBe(1880); // 60pt と 920pt がもどった
+    migrateCardPrices(CARDS);
+    expect(balance()).toBe(1880); // 2 回目は何も変わらない
+    // 新しい値段で交換した人や、知らないカードの記録は変えない
+    store.set('wordlynx:v1:cards', JSON.stringify([{ id: 'c03', paid: 300 }, { id: 'old', paid: 5000 }]));
+    migrateCardPrices(CARDS);
+    expect(getCards()).toEqual([{ id: 'c03', paid: 300 }, { id: 'old', paid: 5000 }]);
   });
 });

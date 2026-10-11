@@ -3,9 +3,13 @@ import { jstDate, type Mode, type Puzzle } from '../core/puzzle';
 import { balance, currentStreak, getMode, getSound, pruneOldDaily, setMode, setSound, statusOf } from '../core/storage';
 import presetsEasy from '../data/presets-easy.json';
 import presets from '../data/presets.json';
+import { accountBox } from './account';
 import { h, hanamaru } from './dom';
 import { lynx } from './lynx';
 import { TEXT, type Text } from './text';
+
+/** 右の列を出す画面のはば (styles.css の .home と同じ値) */
+const WIDE = '(min-width: 64rem)';
 
 const STAGES: Record<Mode, Puzzle[]> = {
   standard: presets as Puzzle[],
@@ -103,58 +107,69 @@ export function renderHome(root: HTMLElement): void {
       'main',
       { class: 'home' },
       h(
-        'header',
-        { class: 'hero' },
-        crest(),
-        h('div', { class: 'hero-text' }, h('h1', { class: 'brand' }, 'Wordlynx'), h('p', { class: 'lead' }, t.lead)),
-        lynx(),
-      ),
-      modeSwitch(root, mode),
-      h(
-        'section',
-        { class: 'daily', 'aria-labelledby': 'daily-title' },
+        'div',
+        { class: 'home-main' },
         h(
-          'div',
-          { class: 'daily-text' },
-          h('h2', { id: 'daily-title' }, t.daily),
-          h('p', { class: 'daily-date' }, t.dateLabel(d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCDay())),
-          h('p', { class: 'daily-note' }, t.dailyNote(dailyStatus === 'done', streak)),
+          'header',
+          { class: 'hero' },
+          crest(),
+          h('div', { class: 'hero-text' }, h('h1', { class: 'brand' }, 'Wordlynx'), h('p', { class: 'lead' }, t.lead)),
+          lynx(),
         ),
-        dailyStatus === 'done' ? hanamaru('hanamaru hanamaru-daily') : null,
-        h('a', { class: 'btn btn-primary', href: link(mode, 'daily') }, dailyAction),
-      ),
-      // スタンプカードとヤマネコカードは、それぞれのページで見る
-      h(
-        'nav',
-        { class: 'reward-links', 'aria-label': t.rewardLinks },
-        h('p', { class: 'points' }, h('span', { class: 'points-label' }, t.pointsLabel), h('b', { class: 'points-num' }, t.points(balance()))),
+        modeSwitch(root, mode),
         h(
-          'div',
-          { class: 'reward-buttons' },
-          h('a', { class: 'btn', href: '#/stamps' }, t.stampTitle),
-          h('a', { class: 'btn', href: '#/cards' }, t.cardsTitle),
+          'section',
+          { class: 'daily', 'aria-labelledby': 'daily-title' },
+          h(
+            'div',
+            { class: 'daily-text' },
+            h('h2', { id: 'daily-title' }, t.daily),
+            h('p', { class: 'daily-date' }, t.dateLabel(d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCDay())),
+            h('p', { class: 'daily-note' }, t.dailyNote(dailyStatus === 'done', streak)),
+          ),
+          dailyStatus === 'done' ? hanamaru('hanamaru hanamaru-daily') : null,
+          h('a', { class: 'btn btn-primary', href: link(mode, 'daily') }, dailyAction),
+        ),
+        // スタンプカードとヤマネコカードは、それぞれのページで見る
+        h(
+          'nav',
+          { class: 'reward-links', 'aria-label': t.rewardLinks },
+          h('p', { class: 'points' }, h('span', { class: 'points-label' }, t.pointsLabel), h('b', { class: 'points-num' }, t.points(balance()))),
+          h(
+            'div',
+            { class: 'reward-buttons' },
+            h('a', { class: 'btn', href: '#/stamps' }, t.stampTitle),
+            h('a', { class: 'btn', href: '#/cards' }, t.cardsTitle),
+          ),
+        ),
+        h(
+          'section',
+          { 'aria-labelledby': 'stage-title' },
+          h('h2', { id: 'stage-title' }, t.stages),
+          h('div', { class: 'tiles' }, ...stages.slice(0, 8).map((s, i) => stageTile(s, i, mode, t))),
+        ),
+        h(
+          'section',
+          { 'aria-labelledby': 'challenge-title' },
+          h('h2', { id: 'challenge-title' }, t.challenge),
+          h('p', { class: 'section-note' }, t.challengeNote),
+          h('div', { class: 'tiles tiles-big' }, ...stages.slice(8).map((s, i) => stageTile(s, i + 8, mode, t))),
         ),
       ),
+      // あそびかた・音・記録の保存。広い画面では右の列にならべ、スクロールしなくても見えるようにする
       h(
-        'section',
-        { 'aria-labelledby': 'stage-title' },
-        h('h2', { id: 'stage-title' }, t.stages),
-        h('div', { class: 'tiles' }, ...stages.slice(0, 8).map((s, i) => stageTile(s, i, mode, t))),
+        'aside',
+        { class: 'home-side' },
+        accountBox(t),
+        h(
+          'details',
+          // 広い画面では場所があるので、はじめから開いておく
+          { class: 'howto', open: matchMedia(WIDE).matches },
+          h('summary', {}, t.howto),
+          h('ul', {}, ...t.howtoItems.map((item) => h('li', {}, item))),
+        ),
+        soundSwitch(t),
       ),
-      h(
-        'section',
-        { 'aria-labelledby': 'challenge-title' },
-        h('h2', { id: 'challenge-title' }, t.challenge),
-        h('p', { class: 'section-note' }, t.challengeNote),
-        h('div', { class: 'tiles tiles-big' }, ...stages.slice(8).map((s, i) => stageTile(s, i + 8, mode, t))),
-      ),
-      h(
-        'details',
-        { class: 'howto' },
-        h('summary', {}, t.howto),
-        h('ul', {}, ...t.howtoItems.map((item) => h('li', {}, item))),
-      ),
-      soundSwitch(t),
     ),
   );
 }

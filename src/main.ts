@@ -1,7 +1,9 @@
 import './styles.css';
 import { generateDaily } from './core/generator';
+import { restoreStore, startCloud } from './cloud';
 import { jstDate, type Mode } from './core/puzzle';
-import { migrateMode, migrateRewards } from './core/storage';
+import { getMode, migrateCardPrices, migrateMode, migrateRewards } from './core/storage';
+import { CARDS } from './data/cards';
 import { EASY_WORDS, WORDS } from './data/words';
 import { renderCards } from './ui/cards';
 import { renderGame } from './ui/game';
@@ -9,9 +11,13 @@ import { renderHome, stageByNumber } from './ui/home';
 import { renderStamps } from './ui/stamps';
 import { TEXT } from './ui/text';
 
+// 前にログインしていた人がいれば、通信を待たずに、この端末に残っているその人の写しで画面を出す
+restoreStore();
+
 // 前から遊んでいた人の記録を、スタンプとポイントに引きつぐ (最初の 1 回だけ)
 migrateMode(); // migrateRewards が記録を書く前に、前から遊んでいた人かどうかを見る
 migrateRewards();
+migrateCardPrices(CARDS); // 値下げ前にカードを交換していた人に、差額を返す
 
 const app = document.getElementById('app')!;
 let cleanup: (() => void) | null = null;
@@ -46,3 +52,17 @@ function route(): void {
 
 window.addEventListener('hashchange', route);
 route();
+
+// 最初の画面を出してから、ログインと Firestore の準備をする (Firebase の設定がないビルドでは何もしない)
+void startCloud({
+  // ログインやほぞんの状態が変わった。状態を出しているのはタイトル画面だけ
+  onStatus: () => {
+    if (app.querySelector('.home')) renderHome(app);
+  },
+  // Firestore から取りこんで、手元の記録が変わった。今の画面をかき直す
+  onData: () => {
+    migrateCardPrices(CARDS); // ほかの端末で、値下げ前の値段で交換した記録が入ってくることがある
+    route();
+  },
+  askMigrate: () => confirm(TEXT[getMode()].askMigrate),
+});
