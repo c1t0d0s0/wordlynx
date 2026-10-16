@@ -130,6 +130,20 @@ export function setMode(mode: Mode): void {
   write('mode', mode);
 }
 
+/** クエリパラメータ (?grade=3 など) から学年を読みとり、1〜3 年生なら初級、4〜6 年生なら上級を返す */
+export function modeFromGrade(search: string): Mode | null {
+  const g = new URLSearchParams(search).get('grade');
+  if (g === '1' || g === '2' || g === '3') return 'easy';
+  if (g === '4' || g === '5' || g === '6') return 'standard';
+  return null;
+}
+
+/** URL に ?grade=1〜6 が付いていたら、その学年向けのモードに切りかえて保存する */
+export function applyGrade(search: string): void {
+  const mode = modeFromGrade(search);
+  if (mode) setMode(mode);
+}
+
 /** 効果音を鳴らすかどうか。何もえらんでいなければ鳴らす */
 export function getSound(): boolean {
   return read<boolean>('sound') !== false;

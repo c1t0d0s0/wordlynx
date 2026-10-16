@@ -2,7 +2,7 @@ import './styles.css';
 import { generateDaily } from './core/generator';
 import { restoreStore, startCloud } from './cloud';
 import { jstDate, type Mode } from './core/puzzle';
-import { getMode, migrateCardPrices, migrateMode, migrateRewards } from './core/storage';
+import { applyGrade, getMode, migrateCardPrices, migrateMode, migrateRewards } from './core/storage';
 import { CARDS } from './data/cards';
 import { EASY_WORDS, WORDS } from './data/words';
 import { renderCards } from './ui/cards';
@@ -16,6 +16,7 @@ restoreStore();
 
 // 前から遊んでいた人の記録を、スタンプとポイントに引きつぐ (最初の 1 回だけ)
 migrateMode(); // migrateRewards が記録を書く前に、前から遊んでいた人かどうかを見る
+applyGrade(location.search); // ?grade=3 などが付いていたら、その学年向けのモードにする
 migrateRewards();
 migrateCardPrices(CARDS); // 値下げ前にカードを交換していた人に、差額を返す
 

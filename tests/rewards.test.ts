@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addDays } from '../src/core/puzzle';
 import { CHALLENGE_POINTS, CLEAR_POINTS, currentRun, earnedPoints, monthView, rewardFor } from '../src/core/rewards';
-import { addClear, addStamp, balance, buyCard, getCards, getClears, getMode, getStamps, migrateCardPrices, migrateMode, migrateRewards, setMode, recordDailyClear, spendPoints } from '../src/core/storage';
+import { addClear, addStamp, applyGrade, balance, buyCard, getCards, getClears, getMode, getStamps, migrateCardPrices, migrateMode, migrateRewards, modeFromGrade, setMode, recordDailyClear, spendPoints } from '../src/core/storage';
 import { CARDS } from '../src/data/cards';
 import { kanjiBeyondGrade3 } from './kanji';
 
@@ -260,6 +260,21 @@ describe('はじめて遊ぶ人', () => {
     store.set('wordlynx:v1:progress:easy-stage-1', JSON.stringify({ sig: 'x', cells: ['あ'], revealed: [], done: true }));
     migrateMode();
     expect(getMode()).toBe('easy');
+  });
+
+  it('?grade=1〜3 は初級、?grade=4〜6 は上級に切りかえて保存する', () => {
+    expect(['1', '2', '3'].map((g) => modeFromGrade(`?grade=${g}`))).toEqual(['easy', 'easy', 'easy']);
+    expect(['4', '5', '6'].map((g) => modeFromGrade(`?grade=${g}`))).toEqual(['standard', 'standard', 'standard']);
+    expect(['', '?grade=0', '?grade=7', '?grade=abc', '?other=3'].map(modeFromGrade)).toEqual([null, null, null, null, null]);
+
+    migrateMode();
+    expect(getMode()).toBe('easy');
+    applyGrade('?grade=4');
+    expect(getMode()).toBe('standard');
+    applyGrade('?grade=3');
+    expect(getMode()).toBe('easy');
+    applyGrade('?grade=invalid');
+    expect(getMode()).toBe('easy'); // 関係ない値なら前のまま
   });
 
   it('最初のクリアでスタンプと 20pt がその場でもらえる (引きつぎに先取りされない)', () => {
