@@ -10,7 +10,7 @@
 - スタンプカード: 今日のパズルをクリアするとスタンプが 1 個。続けるとポイントがたまり、ヤマネコのカード (20 種類) と交換できる
 - クリアすると、出てきた言葉が 1 つずつ大きくなって爆発する演出と効果音 (音はタイトル画面の「音：オン／オフ」で切りかえ)
 - 記録はブラウザ (localStorage) に保存。Google でログインすると Firestore に保存され、ほかのブラウザや端末でも同じ記録で遊べる (ログインは任意)
-- たいせん: 対戦ごとに作るパズルを 2〜8 人で同時に解いて、タイムを競う。対戦コード (数字 5 けた)・招待の URL・QR コードで部屋に入る (Firebase Realtime Database を使う)
+- 対戦: 対戦ごとに作るパズルを 2〜8 人で同時に解いて、タイムを競う。対戦コード (数字 5 けた)・招待の URL・QR コードで部屋に入る (Firebase Realtime Database を使う)
 
 ## 使い方
 
@@ -160,20 +160,20 @@ FIREBASE_API_KEY=x FIREBASE_AUTH_DOMAIN=localhost FIREBASE_PROJECT_ID=demo-wordl
   FIREBASE_DATABASE_URL=https://demo-wordlynx-default-rtdb.firebaseio.com FIREBASE_EMULATOR=1 npm run dev
 ```
 
-## たいせん (Firebase Realtime Database)
+## 対戦 (Firebase Realtime Database)
 
 同じパズルを 2〜8 人で同時に解いて、タイムを競います。ポイント・スタンプ・途中経過は記録しません。
-**`FIREBASE_DATABASE_URL` が入っていないビルドでは、たいせんの入り口は出ず、そのコードも読みこまれません。**
+**`FIREBASE_DATABASE_URL` が入っていないビルドでは、対戦の入り口は出ず、そのコードも読みこまれません。**
 
 ### 遊び方
 
-1. タイトル画面の「たいせんする」から、名前 (ニックネーム、10 文字まで) を入れて「へやを つくる」(初級か上級をえらぶ)
+1. タイトル画面の「対戦する」から、名前 (ニックネーム、10 文字まで) を入れて「部屋を作る」(初級か上級をえらぶ)
 2. 出てきた対戦コード (数字 5 けた)・QR コード・招待の URL を、友だちに見せる。友だちは URL か QR コードから開くか、
-   「コードで はいる」にコードを打って入る (8 人まで)
+   「コードで入る」にコードを打って入る (8 人まで)
 3. 2 人以上そろったら、部屋を作った人 (ホスト) が「スタート」。3・2・1 のあと、全員に同じ盤面が出る
 4. 画面の上にタイマーと、みんなの「うまったマスの数」が出る (入れた字は見えない)。ヒントは何回でも使えるが、1 回ごとにタイムに 30 秒足される
-5. 全員が解き終わるか (リタイア・ぬけた人はのぞく)、ホストが「おわりに する」をおすと、けっか (順位とタイム) が出る。
-   ホストの「もういちど」で、同じ部屋のまま新しいパズルで次の対戦になる
+5. 全員が解き終わるか (リタイア・退出した人はのぞく)、ホストが「終了する」をおすと、結果 (順位とタイム) が出る。
+   ホストの「もう一度」で、同じ部屋のまま新しいパズルで次の対戦になる
 
 ### 仕組み
 
@@ -187,7 +187,7 @@ FIREBASE_API_KEY=x FIREBASE_AUTH_DOMAIN=localhost FIREBASE_PROJECT_ID=demo-wordl
 ```
 battles/{code}                 code = 数字 5 けた (0 から始まらない)
   app: "wordlynx", hostUid, createdAt, mode: "easy" | "standard", vocab
-  round: 1, 2, …               「もういちど」でふえる
+  round: 1, 2, …               「もう一度」でふえる
   seed, status: "waiting" | "playing" | "finished", startAt
   players/{seat}               seat = 0〜7 (ルールで人数を数えられないので、席を 8 つにして人数をおさえる)
     uid, name, joinedAt, online, round, filled, total, hints, finishedAt?, retired?
@@ -270,6 +270,6 @@ ID が `GTM-…` なら Google タグ マネージャー、`G-…` なら Google
 - `src/core/kana.ts` かなの正規化、濁点、ローマ字変換
 - `src/ui/` ホーム、盤面、キーボード、クリア画面
 - `src/core/merge.ts`, `src/core/snapshot.ts` 記録を合わせる決まりと、Firestore に保存する形
-- `src/cloud/` ログインと Firestore との同期、たいせんの通信 (Firebase に依存するのは `app.ts`・`firebase.ts`・`battle-net.ts` だけ)
-- `src/core/battle.ts`, `src/ui/battle.ts` たいせんの決まり (コード・盤面・順位) と画面
+- `src/cloud/` ログインと Firestore との同期、対戦の通信 (Firebase に依存するのは `app.ts`・`firebase.ts`・`battle-net.ts` だけ)
+- `src/core/battle.ts`, `src/ui/battle.ts` 対戦の決まり (コード・盤面・順位) と画面
 - `tests/` 生成結果の正しさ、1 年分のデイリー、語彙データの検査

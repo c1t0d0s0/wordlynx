@@ -21,7 +21,6 @@ import {
 import { DAILY_WORDS } from '../src/core/generator';
 import { EASY_WORDS, WORDS } from '../src/data/words';
 import { BATTLE } from '../src/ui/text';
-import { kanjiBeyondGrade3 } from './kanji';
 
 const player = (uid: string, over: Partial<BattlePlayer> = {}): BattlePlayer => ({
   uid,
@@ -196,9 +195,11 @@ describe('タイムの表し方', () => {
   });
 });
 
-describe('たいせんの文言', () => {
-  it('初級の人も読めるよう、3 年生までの漢字だけを使う', () => {
-    const texts = Object.values(BATTLE).map((v) => (typeof v === 'function' ? (v as (...a: unknown[]) => string)(3, 2, 30) : v));
-    for (const text of texts) expect(kanjiBeyondGrade3(String(text)), String(text)).toEqual([]);
+describe('対戦の文言', () => {
+  it('高学年向けなので、分かち書きにせず漢字で書く', () => {
+    const texts = Object.values(BATTLE).map((v) => String(typeof v === 'function' ? (v as (...a: unknown[]) => string)(3, 2, 30) : v));
+    // 初級の文言のような「日本語の字 + 空白 + 日本語の字」は使わない
+    for (const text of texts) expect(text, text).not.toMatch(/[ぁ-んァ-ヶー一-龠] [ぁ-んァ-ヶ一-龠]/);
+    expect([BATTLE.title, BATTLE.resultTitle, BATTLE.rank(1), BATTLE.again]).toEqual(['対戦', '結果', '1位', 'もう一度']);
   });
 });

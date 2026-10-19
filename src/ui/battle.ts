@@ -17,7 +17,7 @@ import { getMode } from '../core/storage';
 import { EASY_WORDS, WORDS } from '../data/words';
 import type { BattleNet } from '../cloud/battle-net';
 import { battleAvailable } from '../cloud/config';
-import { h, homeButton, withRuby } from './dom';
+import { h, homeButton } from './dom';
 import { renderGame } from './game';
 import { BATTLE as B } from './text';
 
@@ -57,7 +57,7 @@ function saveName(name: string): void {
 }
 
 const wordsOf = (mode: Mode): readonly Word[] => (mode === 'easy' ? EASY_WORDS : WORDS);
-const modeName = (mode: Mode) => (mode === 'easy' ? '初級(しょきゅう)' : '上級(じょうきゅう)');
+const modeName = (mode: Mode) => (mode === 'easy' ? '初級' : '上級');
 const roomHash = (code: string) => `#/battle/${code}`;
 const inviteUrl = (code: string) => `${location.href.split('#')[0]}${roomHash(code)}`;
 
@@ -168,7 +168,7 @@ export function renderBattle(root: HTMLElement, code?: string): () => void {
           modeBtns.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
         },
       });
-      btn.append(...withRuby('span', '', modeName(m)).childNodes);
+      btn.append(modeName(m));
       return btn;
     };
     const modeBtns = [modeBtn('easy'), modeBtn('standard')];
@@ -342,7 +342,7 @@ export function renderBattle(root: HTMLElement, code?: string): () => void {
         h(
           'section',
           { class: 'battle-card' },
-          withRuby('p', 'battle-lead', B.joinRoom(modeName(r.mode))),
+          h('p', { class: 'battle-lead' }, B.joinRoom(modeName(r.mode))),
           h('p', { class: 'battle-label' }, B.codeLabel),
           h('p', { class: 'battle-code' }, code),
           name.el,
@@ -390,7 +390,7 @@ export function renderBattle(root: HTMLElement, code?: string): () => void {
               { class: 'battle-card battle-invite', 'aria-labelledby': 'battle-code-title' },
               h('h2', { id: 'battle-code-title' }, B.waitingTitle),
               h('p', { class: 'battle-code' }, code),
-              withRuby('p', 'battle-note', `${B.modeLabel}：${modeName(r.mode)}`),
+              h('p', { class: 'battle-note' }, `${B.modeLabel}：${modeName(r.mode)}`),
               canvas,
               h('p', { class: 'battle-note' }, B.shareNote),
               h('div', { class: 'battle-url-row' }, urlInput, copyBtn, shareBtn),
