@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { generate, generateDaily } from '../src/core/generator';
+import { STAGE_COUNT, generate, generateDaily, generateStage, stageId, stageMonth, stageSpec } from '../src/core/generator';
 import { addDays, entryCells, solutionGrid, type Puzzle } from '../src/core/puzzle';
 import { EASY_WORDS, WORDS } from '../src/data/words';
-import presets from '../src/data/presets.json';
-import presetsEasy from '../src/data/presets-easy.json';
 
 /** 2 文字以上つながるマスの列が、すべて置いた言葉と一致することを確かめる */
 function assertValid(p: Puzzle): void {
@@ -131,26 +129,53 @@ describe('初級モード', () => {
       date = addDays(date, 1);
     }
   }, 120_000);
-
-  const stages = presetsEasy as Puzzle[];
-  it('ステージは 10×10 が 8 個、20×20 が 2 個', () => {
-    expect(stages.map((s) => s.size)).toEqual([10, 10, 10, 10, 10, 10, 10, 10, 20, 20]);
-    expect(stages.map((s) => s.id)).toEqual(stages.map((_, i) => `easy-stage-${i + 1}`));
-  });
-  it.each(stages.map((s) => [s.id, s] as const))('%s は正しい盤面で、やさしい言葉だけ', (_id, s) => {
-    assertValid(s);
-    const allowed = new Set(EASY_WORDS.map((w) => w.reading));
-    for (const e of s.entries) expect(allowed.has(e.word.reading)).toBe(true);
-  });
 });
 
-describe('プリセット', () => {
-  const stages = presets as Puzzle[];
-  it('10×10 が 8 個、20×20 が 2 個', () => {
-    expect(stages.map((s) => s.size)).toEqual([10, 10, 10, 10, 10, 10, 10, 10, 20, 20]);
-    expect(stages.map((s) => s.id)).toEqual(stages.map((_, i) => `stage-${i + 1}`));
+describe('毎月のステージ', () => {
+  // 2026 年 10 月から 2 年分
+  const months = Array.from({ length: 24 }, (_, i) => {
+    const m = 9 + i;
+    return `${2026 + Math.floor(m / 12)}-${String((m % 12) + 1).padStart(2, '0')}`;
   });
-  it.each(stages.map((s) => [s.id, s] as const))('%s は正しい盤面', (_id, s) => {
-    assertValid(s);
+
+  it('月は日本時間の日付から決まり、id に入る', () => {
+    expect(stageMonth('2026-10-31')).toBe('2026-10');
+    expect(stageId('2026-11', 3, 'standard')).toBe('stage-2026-11-3');
+    expect(stageId('2026-11', 10, 'easy')).toBe('easy-stage-2026-11-10');
+    expect([1, 8, 9, 10].map((n) => stageSpec(n, 'easy').size)).toEqual([10, 10, 20, 20]);
+  });
+
+  it.each(months.flatMap((month) => (['easy', 'standard'] as const).map((mode) => [month, mode] as const)))(
+    '%s %s: 10 個とも正しい盤面で、決めた語数がそろい、同じ言葉は出ない',
+    (month, mode) => {
+      const words = mode === 'easy' ? EASY_WORDS : WORDS;
+      const allowed = new Set(words.map((w) => w.reading));
+      const seen = new Set<string>();
+      for (let n = 1; n <= STAGE_COUNT; n++) {
+        const s = generateStage(words, month, n, mode);
+        const label = `${month} ${mode} ${n}`;
+        expect(s.id, label).toBe(stageId(month, n, mode));
+        expect(s.size, label).toBe(stageSpec(n, mode).size);
+        // タイトル画面は盤面を作らずに stageSpec の語数を出すので、ちょうど同じでないといけない
+        expect(s.entries.length, label).toBe(stageSpec(n, mode).words);
+        assertValid(s);
+        for (const e of s.entries) {
+          expect(allowed.has(e.word.reading), `${label} ${e.word.reading}`).toBe(true);
+          expect(seen.has(e.word.reading), `${label} ${e.word.reading}`).toBe(false);
+          seen.add(e.word.reading);
+        }
+      }
+    },
+    60_000,
+  );
+
+  it('同じ月ならいつも同じ盤面、月がちがうと別の盤面', () => {
+    const a = generateStage(WORDS, '2026-10', 1, 'standard');
+    // 覚えておいた盤面ではなく、作り直しても同じになるか (語彙の配列を別にすると作り直す)
+    expect(JSON.stringify(generateStage([...WORDS], '2026-10', 1, 'standard'))).toBe(JSON.stringify(a));
+    const b = generateStage(WORDS, '2026-11', 1, 'standard');
+    expect(b.entries.map((e) => e.answer)).not.toEqual(a.entries.map((e) => e.answer));
+    const easy = generateStage(EASY_WORDS, '2026-10', 1, 'easy');
+    expect(easy.entries.map((e) => e.answer)).not.toEqual(a.entries.map((e) => e.answer));
   });
 });

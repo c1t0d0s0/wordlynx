@@ -10,9 +10,12 @@ export interface Text {
   start: string;
   resume: string;
   review: string;
-  stages: string;
-  challenge: string;
+  stages: (month: number) => string;
+  stagesNote: string;
+  challenge: (month: number) => string;
   challengeNote: string;
+  /** 20×20 の盤面を作っている間に出す */
+  making: string;
   playing: string;
   cleared: string;
   words: (n: number) => string;
@@ -98,9 +101,11 @@ const standard: Text = {
   start: 'はじめる',
   resume: 'つづきから',
   review: 'もういちど見る',
-  stages: 'ステージ',
-  challenge: 'チャレンジ',
+  stages: (month) => `${month}月のステージ`,
+  stagesNote: '毎月1日に、新しいステージになるよ。',
+  challenge: (month) => `${month}月のチャレンジ`,
   challengeNote: `たて20マス、よこ20マスの大きな盤面。クリアすると${CHALLENGE_POINTS}pt。時間のあるときにどうぞ。`,
+  making: 'パズルを作っています…',
   playing: 'とちゅう',
   cleared: 'クリア',
   words: (n) => `${n}語`,
@@ -189,6 +194,10 @@ const standard: Text = {
 const easy: Text = {
   ...standard,
   lead: 'クロスワードパズル',
+  stages: (month) => `${month}月の ステージ`,
+  stagesNote: 'まいつき 1日に、新しい ステージに なるよ。',
+  challenge: (month) => `${month}月の チャレンジ`,
+  making: 'パズルを 作って いるよ…',
   challengeNote: `たて20マス、よこ20マスの 大きな パズル。クリアすると ${CHALLENGE_POINTS}pt。時間の ある ときに どうぞ。`,
   words: (n) => `${n}こ`,
   howtoItems: [

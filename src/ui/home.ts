@@ -1,8 +1,7 @@
-import { dailyId } from '../core/generator';
+import { STAGE_COUNT, dailyId, generateStage, stageId, stageMonth, stageSpec } from '../core/generator';
 import { jstDate, type Mode, type Puzzle } from '../core/puzzle';
-import { balance, currentStreak, getMode, getSound, pruneOldDaily, setMode, setSound, statusOf } from '../core/storage';
-import presetsEasy from '../data/presets-easy.json';
-import presets from '../data/presets.json';
+import { balance, currentStreak, getMode, getSound, pruneOldProgress, setMode, setSound, statusOf } from '../core/storage';
+import { EASY_WORDS, WORDS } from '../data/words';
 import { battleAvailable } from '../cloud/config';
 import { accountBox } from './account';
 import { h, hanamaru } from './dom';
@@ -11,11 +10,6 @@ import { BATTLE, TEXT, type Text } from './text';
 
 /** 右の列を出す画面のはば (styles.css の .home と同じ値) */
 const WIDE = '(min-width: 64rem)';
-
-const STAGES: Record<Mode, Puzzle[]> = {
-  standard: presets as Puzzle[],
-  easy: presetsEasy as Puzzle[],
-};
 
 /** モードごとの URL。上級むけは #/daily、初級むけは #/easy/daily */
 const link = (mode: Mode, path: string) => (mode === 'easy' ? `#/easy/${path}` : `#/${path}`);
@@ -78,15 +72,16 @@ function soundSwitch(t: Text): HTMLElement {
   return h('p', { class: 'settings' }, btn);
 }
 
-function stageTile(stage: Puzzle, index: number, mode: Mode, t: Text): HTMLElement {
-  const status = statusOf(stage.id);
+// タイルには状態と語数しか出さないので、タイトル画面では盤面を作らない (20×20 は作るのに時間がかかる)
+function stageTile(month: string, n: number, mode: Mode, t: Text): HTMLElement {
+  const status = statusOf(stageId(month, n, mode));
   return h(
     'a',
-    { class: `tile tile-${status}`, href: link(mode, `stage/${index + 1}`) },
-    h('span', { class: 'tile-num' }, String(index + 1)),
+    { class: `tile tile-${status}`, href: link(mode, `stage/${n}`) },
+    h('span', { class: 'tile-num' }, String(n)),
     // 横長のタイルは 2 行分しか入らないので、遊んだあとは語数のかわりに「クリア」「とちゅう」を出す
     status === 'new'
-      ? h('span', { class: 'tile-meta' }, t.words(stage.entries.length))
+      ? h('span', { class: 'tile-meta' }, t.words(stageSpec(n, mode).words))
       : h('span', { class: 'tile-meta tile-status' }, status === 'done' ? t.cleared : t.playing),
     status === 'done' ? hanamaru('hanamaru hanamaru-small') : null,
   );
@@ -95,9 +90,10 @@ function stageTile(stage: Puzzle, index: number, mode: Mode, t: Text): HTMLEleme
 export function renderHome(root: HTMLElement): void {
   const mode = getMode();
   const t = TEXT[mode];
-  const stages = STAGES[mode];
   const today = jstDate();
-  pruneOldDaily(today);
+  const month = stageMonth(today);
+  const tiles = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => stageTile(month, from + i, mode, t));
+  pruneOldProgress(today);
   const dailyStatus = statusOf(dailyId(today, mode));
   const streak = currentStreak(today, mode);
   const dailyAction = { new: t.start, playing: t.resume, done: t.review }[dailyStatus];
@@ -160,15 +156,16 @@ export function renderHome(root: HTMLElement): void {
         h(
           'section',
           { 'aria-labelledby': 'stage-title' },
-          h('h2', { id: 'stage-title' }, t.stages),
-          h('div', { class: 'tiles' }, ...stages.slice(0, 8).map((s, i) => stageTile(s, i, mode, t))),
+          h('h2', { id: 'stage-title' }, t.stages(d.getUTCMonth() + 1)),
+          h('p', { class: 'section-note' }, t.stagesNote),
+          h('div', { class: 'tiles' }, ...tiles(1, 8)),
         ),
         h(
           'section',
           { 'aria-labelledby': 'challenge-title' },
-          h('h2', { id: 'challenge-title' }, t.challenge),
+          h('h2', { id: 'challenge-title' }, t.challenge(d.getUTCMonth() + 1)),
           h('p', { class: 'section-note' }, t.challengeNote),
-          h('div', { class: 'tiles tiles-big' }, ...stages.slice(8).map((s, i) => stageTile(s, i + 8, mode, t))),
+          h('div', { class: 'tiles tiles-big' }, ...tiles(9, STAGE_COUNT)),
         ),
       ),
       // あそびかた・音・記録の保存。広い画面では右の列にならべ、スクロールしなくても見えるようにする
@@ -189,6 +186,7 @@ export function renderHome(root: HTMLElement): void {
   );
 }
 
-export function stageByNumber(mode: Mode, n: number): Puzzle | undefined {
-  return STAGES[mode][n - 1];
+/** 今月のステージ n (1〜STAGE_COUNT) */
+export function stageFor(mode: Mode, n: number, today: string): Puzzle {
+  return generateStage(mode === 'easy' ? EASY_WORDS : WORDS, stageMonth(today), n, mode);
 }

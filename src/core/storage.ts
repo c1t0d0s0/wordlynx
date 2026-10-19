@@ -1,3 +1,4 @@
+import { stageMonth } from './generator';
 import { addDays, puzzleSignature, type Mode, type Puzzle } from './puzzle';
 import { clearPoints, earnedPoints, normalizeStamps, rewardFor, type StampReward } from './rewards';
 
@@ -171,11 +172,10 @@ export function currentStreak(today: string, mode: Mode): number {
   return stats.lastDate === today || stats.lastDate === addDays(today, -1) ? stats.streak : 0;
 }
 
-/** 古いデイリーの途中経過を消す */
-export function pruneOldDaily(today: string): void {
-  const keep = [`progress:daily-${today}`, `progress:daily-easy-${today}`];
+/** 前の日までの今日のパズルと、前の月までのステージの途中経過を消す */
+export function pruneOldProgress(today: string): void {
   for (const key of keys()) {
-    if (key.startsWith('progress:daily-') && !keep.includes(key)) removeKey(prefix + key);
+    if (key.startsWith('progress:') && isStaleProgress(key.slice('progress:'.length), today)) removeKey(prefix + key);
   }
 }
 
@@ -187,9 +187,14 @@ function removeKey(fullKey: string): void {
   }
 }
 
-/** 今日のパズルの途中経過のうち、今日のものかどうか (前の日のものは消してよい) */
-export function isStaleDaily(progressId: string, today: string): boolean {
-  return progressId.startsWith('daily-') && progressId !== `daily-${today}` && progressId !== `daily-easy-${today}`;
+/**
+ * もういらない途中経過かどうか。前の日までの今日のパズルと、ほかの月のステージ
+ * (月の入っていない stage-3 の形は、月ごとに作り直す前の固定ステージ)
+ */
+export function isStaleProgress(progressId: string, today: string): boolean {
+  if (progressId.startsWith('daily-')) return progressId !== `daily-${today}` && progressId !== `daily-easy-${today}`;
+  const stage = progressId.match(/^(?:easy-)?stage-(?:(\d{4}-\d{2})-)?\d+$/);
+  return !!stage && stage[1] !== stageMonth(today);
 }
 
 // ---- スタンプ・ポイント・カード (初級と上級で共通) ----

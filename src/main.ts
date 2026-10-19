@@ -1,5 +1,5 @@
 import './styles.css';
-import { generateDaily } from './core/generator';
+import { DAILY_SIZE, STAGE_COUNT, generateDaily, stageSpec } from './core/generator';
 import { restoreStore, startCloud } from './cloud';
 import { jstDate, type Mode } from './core/puzzle';
 import { applyGrade, getMode, migrateCardPrices, migrateMode, migrateRewards } from './core/storage';
@@ -8,7 +8,8 @@ import { EASY_WORDS, WORDS } from './data/words';
 import { renderBattle } from './ui/battle';
 import { renderCards } from './ui/cards';
 import { renderGame } from './ui/game';
-import { renderHome, stageByNumber } from './ui/home';
+import { h } from './ui/dom';
+import { renderHome, stageFor } from './ui/home';
 import { renderStamps } from './ui/stamps';
 import { TEXT } from './ui/text';
 
@@ -34,7 +35,7 @@ function route(): void {
   const mode: Mode = match?.[1] ? 'easy' : 'standard';
   const t = TEXT[mode];
   const num = Number(match?.[3]);
-  const stage = match?.[3] ? stageByNumber(mode, num) : undefined;
+  const stage = num >= 1 && num <= STAGE_COUNT;
   // #/battle は、たいせんの入口。#/battle/12345 は、その対戦コードの部屋
   const battle = location.hash.match(/^#\/battle(?:\/(\d{5}))?$/);
   if (match?.[2] === 'daily') {
@@ -42,7 +43,22 @@ function route(): void {
     const words = mode === 'easy' ? EASY_WORDS : WORDS;
     cleanup = renderGame(app, generateDaily(words, today, mode), t.daily, mode, today);
   } else if (stage) {
-    cleanup = renderGame(app, stage, num > 8 ? t.challengeTitle(num) : t.stageTitle(num), mode);
+    // ステージは今月のもの。開くときに作る
+    const today = jstDate();
+    const open = () => renderGame(app, stageFor(mode, num, today), num > 8 ? t.challengeTitle(num) : t.stageTitle(num), mode);
+    if (stageSpec(num, mode).size <= DAILY_SIZE) {
+      cleanup = open();
+    } else {
+      // 20×20 は作るのに時間がかかるので、先に「作っています」を出して、画面が止まって見えないようにする
+      // (requestAnimationFrame のあとの setTimeout なら、「作っています」がかならず一度描かれてから作りはじめる)
+      app.replaceChildren(h('main', { class: 'making' }, h('p', {}, t.making)));
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const frame = requestAnimationFrame(() => (timer = setTimeout(() => (cleanup = open()))));
+      cleanup = () => {
+        cancelAnimationFrame(frame);
+        clearTimeout(timer);
+      };
+    }
   } else if (battle) {
     cleanup = renderBattle(app, battle[1]);
   } else if (location.hash === '#/cards') {

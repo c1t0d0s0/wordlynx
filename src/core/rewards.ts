@@ -10,9 +10,9 @@ export const CLEAR_POINTS = 20;
 /** むずかしいチャレンジ (ステージ 9・10。初級も上級も) をクリアするともらえるポイント */
 export const CHALLENGE_POINTS = 200;
 
-/** そのパズルをクリアするともらえるポイント */
+/** そのパズルをクリアするともらえるポイント。ステージの id は stage-2026-10-9 の形 (前の固定ステージは stage-9) */
 export function clearPoints(puzzleId: string): number {
-  return /^(easy-)?stage-(9|10)$/.test(puzzleId) ? CHALLENGE_POINTS : CLEAR_POINTS;
+  return /^(easy-)?stage-(?:\d{4}-\d{2}-)?(9|10)$/.test(puzzleId) ? CHALLENGE_POINTS : CLEAR_POINTS;
 }
 
 /** 1 つのパズルで、ポイントなしで使えるヒントの回数 */

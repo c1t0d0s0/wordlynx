@@ -132,6 +132,15 @@ rt {
   stroke-linejoin: round;
 }
 
+/* 20×20 のステージを作っている間 */
+.making {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
 /* ---- ホーム ---- */
 .home {
   max-width: 44rem;

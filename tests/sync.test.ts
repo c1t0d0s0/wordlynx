@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Sync, type AuthPort, type Remote, type SyncHooks } from '../src/cloud/sync';
+import { stageId, stageMonth } from '../src/core/generator';
 import { mergeSnapshots } from '../src/core/merge';
 import { addDays, jstDate } from '../src/core/puzzle';
 import { emptySnapshot, type Snapshot } from '../src/core/snapshot';
@@ -23,6 +24,9 @@ import {
   useStore,
 } from '../src/core/storage';
 import { CARDS } from '../src/data/cards';
+
+/** 今月のステージの id (月の変わり目にテストしても、前の月のものとして消されないように) */
+const st = (n: number) => stageId(stageMonth(jstDate()), n, 'standard');
 
 // ---- 代用品 ----
 
@@ -155,8 +159,8 @@ describe('ログインしない人', () => {
     await a.sync.flush();
     expect(a.sync.status).toBe('signed-out');
     addStamp(today);
-    addClear('stage-1');
-    saveProgress('stage-1', done);
+    addClear(st(1));
+    saveProgress(st(1), done);
     await a.sync.flush();
     expect(cloud.writes).toBe(0);
     expect(cloud.reads).toBe(0);
@@ -173,10 +177,10 @@ describe('ログインして記録をうつす', () => {
     await a.sync.flush();
     // ログインなしで遊んだ記録
     for (const d of daysBefore(7)) addStamp(d);
-    addClear('stage-1');
-    addClear('stage-9');
-    saveProgress('stage-1', done);
-    saveProgress('stage-2', playing);
+    addClear(st(1));
+    addClear(st(9));
+    saveProgress(st(1), done);
+    saveProgress(st(2), playing);
     expect(balance()).toBe(1220);
     expect(buyCard(CARDS[0])).toBe(true); // 40pt
   });
@@ -190,16 +194,16 @@ describe('ログインして記録をうつす', () => {
 
     const remote = cloud.data.get('alice')!;
     expect(remote.stamps).toHaveLength(7);
-    expect(remote.clears).toEqual(['stage-1', 'stage-9']);
+    expect(remote.clears).toEqual([st(1), st(9)]);
     expect(remote.cards).toEqual([{ id: 'c01', paid: 40 }]);
-    expect(remote.progress['stage-1'].done).toBe(true);
-    expect(remote.progress['stage-2'].cells).toEqual(['あ', '']);
+    expect(remote.progress[st(1)].done).toBe(true);
+    expect(remote.progress[st(2)].cells).toEqual(['あ', '']);
 
     // 画面は、その人の記録を見ている
     expect(currentUid()).toBe('alice');
     expect(balance()).toBe(1180);
-    expect(statusOf('stage-1')).toBe('done');
-    expect(statusOf('stage-2')).toBe('playing');
+    expect(statusOf(st(1))).toBe('done');
+    expect(statusOf(st(2))).toBe('playing');
     // ログインなしの記録は残っていない (もう一度ログインしても、二重にうつらない)
     expect([...a.storage.keys()].filter((k) => k.startsWith('wordlynx:v1:'))).toEqual([]);
     expect(rememberedUid()).toBe('alice');
@@ -223,11 +227,11 @@ describe('ログインして記録をうつす', () => {
   });
 
   it('アカウントにすでに記録があるときは、両方を合わせる', async () => {
-    cloud.data.set('alice', { ...emptySnapshot(), stamps: [addDays(today, -7), addDays(today, -8)], clears: ['stage-1', 'stage-3'], cards: [{ id: 'c02', paid: 80 }] });
+    cloud.data.set('alice', { ...emptySnapshot(), stamps: [addDays(today, -7), addDays(today, -8)], clears: [st(1), st(3)], cards: [{ id: 'c02', paid: 80 }] });
     await a.sync.signIn();
     await a.sync.flush();
     expect(getStamps()).toHaveLength(9);
-    expect(getClears().sort()).toEqual(['stage-1', 'stage-3', 'stage-9']);
+    expect(getClears().sort()).toEqual([st(1), st(3), st(9)]);
     expect(getCards().map((c) => c.id).sort()).toEqual(['c01', 'c02']);
     // 9 日連続で 1000pt、クリアは 20 + 20 + 200、カードに 40 + 80
     expect(balance()).toBe(1000 + 240 - 120);
@@ -260,7 +264,7 @@ describe('ブラウザを変えても記録が続く', () => {
     await a.sync.flush();
     for (const d of daysBefore(7)) addStamp(d);
     addClear(`daily-${today}`);
-    saveProgress('stage-3', playing);
+    saveProgress(st(3), playing);
     setMode('standard');
     expect(buyCard(CARDS[1])).toBe(true); // 80pt
     expect(a.sync.status).toBe('syncing');
@@ -280,7 +284,7 @@ describe('ブラウザを変えても記録が続く', () => {
     expect(getStamps()).toHaveLength(7);
     expect(balance()).toBe(onA);
     expect(getCards()).toEqual([{ id: 'c02', paid: 80 }]);
-    expect(statusOf('stage-3')).toBe('playing');
+    expect(statusOf(st(3))).toBe('playing');
     expect(getMode()).toBe('standard');
     expect(b.dataChanged).toBeGreaterThan(0);
   });
@@ -295,44 +299,49 @@ describe('ブラウザを変えても記録が続く', () => {
     await b.sync.flush();
 
     // B でステージ 2 をクリアし、ヒントに 10pt 使う
-    addClear('stage-2');
-    addClear('stage-9');
-    saveProgress('stage-2', done);
-    expect(spendPoints(10, 'stage-2')).toBe(true);
+    addClear(st(2));
+    addClear(st(9));
+    saveProgress(st(2), done);
+    expect(spendPoints(10, st(2))).toBe(true);
     // その間に、A でステージ 1 をクリアし、スタンプを押す (まだ B の変更を知らない)
     use(a);
-    addClear('stage-1');
+    addClear(st(1));
     addStamp(today);
-    saveProgress('stage-1', done);
+    saveProgress(st(1), done);
     await a.sync.flush();
     use(b);
     await b.sync.flush();
 
     // B は、送るときに A の分を取りこんでいる
-    expect(getClears().sort()).toEqual(['stage-1', 'stage-2', 'stage-9']);
+    expect(getClears().sort()).toEqual([st(1), st(2), st(9)]);
     expect(getStamps()).toEqual([today]);
     expect(balance()).toBe(20 + 20 + 200 - 10);
     const remote = cloud.data.get('alice')!;
-    expect(remote.clears).toEqual(['stage-1', 'stage-2', 'stage-9']);
-    expect(remote.spent).toEqual({ 'stage-2': 10 });
-    expect(Object.keys(remote.progress).sort()).toEqual(['stage-1', 'stage-2']);
+    expect(remote.clears).toEqual([st(1), st(2), st(9)]);
+    expect(remote.spent).toEqual({ [st(2)]: 10 });
+    expect(Object.keys(remote.progress).sort()).toEqual([st(1), st(2)]);
 
     // A は、次に何かを送ったときに B の分を取りこむ
     use(a);
-    expect(getClears().sort()).toEqual(['stage-1']);
+    expect(getClears().sort()).toEqual([st(1)]);
     setMode('easy');
     await a.sync.flush();
-    expect(getClears().sort()).toEqual(['stage-1', 'stage-2', 'stage-9']);
+    expect(getClears().sort()).toEqual([st(1), st(2), st(9)]);
     expect(balance()).toBe(20 + 20 + 200 - 10);
   });
 
-  it('前の日までの今日のパズルの途中経過は、取りこまずに Firestore からも消す', async () => {
+  it('前の日までの今日のパズルと、前の月までのステージの途中経過は、取りこまずに Firestore からも消す', async () => {
     const old = `daily-${addDays(today, -1)}`;
-    cloud.data.set('alice', { ...emptySnapshot(), progress: { [old]: done, [`daily-${today}`]: playing, 'stage-1': done } });
+    const lastMonth = stageId(stageMonth(addDays(`${today.slice(0, 7)}-01`, -1)), 1, 'easy');
+    cloud.data.set('alice', {
+      ...emptySnapshot(),
+      // stage-3 は、月ごとに作り直す前の固定ステージ
+      progress: { [old]: done, [`daily-${today}`]: playing, [st(1)]: done, [lastMonth]: playing, 'stage-3': done },
+    });
     await a.sync.signIn();
     await a.sync.flush();
-    expect(Object.keys(exportSnapshot().progress).sort()).toEqual([`daily-${today}`, 'stage-1']);
-    expect(Object.keys(cloud.data.get('alice')!.progress).sort()).toEqual([`daily-${today}`, 'stage-1']);
+    expect(Object.keys(exportSnapshot().progress).sort()).toEqual([`daily-${today}`, st(1)]);
+    expect(Object.keys(cloud.data.get('alice')!.progress).sort()).toEqual([`daily-${today}`, st(1)]);
   });
 });
 
@@ -342,8 +351,8 @@ describe('通信できないとき', () => {
     await a.sync.flush();
     cloud.fail = true;
     addStamp(today);
-    addClear('stage-1');
-    saveProgress('stage-1', done);
+    addClear(st(1));
+    saveProgress(st(1), done);
     await a.sync.flush();
     expect(a.sync.status).toBe('offline');
     expect(a.sync.hasPending()).toBe(true);
@@ -354,15 +363,15 @@ describe('通信できないとき', () => {
     await a.sync.flush();
     expect(a.sync.status).toBe('synced');
     expect(a.sync.hasPending()).toBe(false);
-    expect(cloud.data.get('alice')!.clears).toEqual(['stage-1']);
-    expect(cloud.data.get('alice')!.progress['stage-1'].done).toBe(true);
+    expect(cloud.data.get('alice')!.clears).toEqual([st(1)]);
+    expect(cloud.data.get('alice')!.progress[st(1)].done).toBe(true);
   });
 
   it('ログインした直後に通信できなくても、あとで記録がうつる (うつす前に、端末の記録は消さない)', async () => {
     a.auth.resolve(null);
     await a.sync.flush();
-    addClear('stage-1');
-    addClear('stage-2');
+    addClear(st(1));
+    addClear(st(2));
     cloud.fail = true;
     await a.sync.signIn();
     await a.sync.flush();
@@ -371,8 +380,8 @@ describe('通信できないとき', () => {
     cloud.fail = false;
     await a.sync.flush();
     expect(a.sync.status).toBe('synced');
-    expect(cloud.data.get('alice')!.clears).toEqual(['stage-1', 'stage-2']);
-    expect(getClears().sort()).toEqual(['stage-1', 'stage-2']);
+    expect(cloud.data.get('alice')!.clears).toEqual([st(1), st(2)]);
+    expect(getClears().sort()).toEqual([st(1), st(2)]);
     expect(a.storage.has('wordlynx:v1:clears')).toBe(false);
   });
 });
@@ -381,8 +390,8 @@ describe('ログアウト', () => {
   it('この端末から、その人の写しが消える', async () => {
     await a.sync.signIn();
     await a.sync.flush();
-    addClear('stage-1');
-    saveProgress('stage-1', done);
+    addClear(st(1));
+    saveProgress(st(1), done);
     expect(await a.sync.signOut()).toBe('ok');
     await a.sync.flush();
     expect(a.sync.status).toBe('signed-out');
@@ -391,17 +400,17 @@ describe('ログアウト', () => {
     expect([...a.storage.keys()].filter((k) => k.startsWith('wordlynx:u:'))).toEqual([]);
     expect(getClears()).toEqual([]);
     // 送ってからログアウトしているので、Firestore には残っている
-    expect(cloud.data.get('alice')!.clears).toEqual(['stage-1']);
+    expect(cloud.data.get('alice')!.clears).toEqual([st(1)]);
   });
 
   it('送れていない変更があるときは、たしかめてからでないとログアウトしない', async () => {
     await a.sync.signIn();
     await a.sync.flush();
     cloud.fail = true;
-    addClear('stage-1');
+    addClear(st(1));
     expect(await a.sync.signOut()).toBe('unsynced');
     expect(a.sync.uid).toBe('alice');
-    expect(getClears()).toEqual(['stage-1']); // まだ手元にある
+    expect(getClears()).toEqual([st(1)]); // まだ手元にある
     expect(await a.sync.signOut(true)).toBe('ok');
     await a.sync.flush();
     expect(currentUid()).toBeNull();
@@ -410,7 +419,7 @@ describe('ログアウト', () => {
   it('別の人がログインしても、前の人の記録は見えない', async () => {
     await a.sync.signIn();
     await a.sync.flush();
-    addClear('stage-1');
+    addClear(st(1));
     await a.sync.signOut();
     await a.sync.flush();
     a.auth.nextUid = 'bob';
@@ -418,7 +427,7 @@ describe('ログアウト', () => {
     await a.sync.flush();
     expect(currentUid()).toBe('bob');
     expect(getClears()).toEqual([]);
-    expect(cloud.data.get('alice')!.clears).toEqual(['stage-1']);
+    expect(cloud.data.get('alice')!.clears).toEqual([st(1)]);
     expect(cloud.data.get('bob')?.clears ?? []).toEqual([]);
   });
 });

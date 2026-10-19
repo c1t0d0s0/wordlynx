@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "presets": "tsx scripts/build-presets.ts"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

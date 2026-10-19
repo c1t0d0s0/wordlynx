@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addDays } from '../src/core/puzzle';
-import { CHALLENGE_POINTS, CLEAR_POINTS, currentRun, earnedPoints, monthView, rewardFor } from '../src/core/rewards';
-import { addClear, addStamp, applyGrade, balance, buyCard, getCards, getClears, getMode, getStamps, migrateCardPrices, migrateMode, migrateRewards, modeFromGrade, setMode, recordDailyClear, spendPoints } from '../src/core/storage';
+import { CHALLENGE_POINTS, CLEAR_POINTS, clearPoints, currentRun, earnedPoints, monthView, rewardFor } from '../src/core/rewards';
+import { addClear, addStamp, applyGrade, balance, buyCard, getCards, getClears, getMode, getStamps, isStaleProgress, migrateCardPrices, migrateMode, migrateRewards, modeFromGrade, pruneOldProgress, setMode, recordDailyClear, spendPoints } from '../src/core/storage';
 import { CARDS } from '../src/data/cards';
 import { kanjiBeyondGrade3 } from './kanji';
 
@@ -23,6 +23,56 @@ Object.defineProperty(globalThis, 'localStorage', {
   },
 });
 beforeEach(() => store.clear());
+
+describe('ステージのポイント', () => {
+  it('チャレンジ (9・10) は 200pt、ほかは 20pt。前の固定ステージの id も同じ', () => {
+    expect(clearPoints('stage-2026-10-9')).toBe(CHALLENGE_POINTS);
+    expect(clearPoints('easy-stage-2026-11-10')).toBe(CHALLENGE_POINTS);
+    expect(clearPoints('stage-9')).toBe(CHALLENGE_POINTS);
+    expect(clearPoints('easy-stage-10')).toBe(CHALLENGE_POINTS);
+    expect(clearPoints('stage-2026-10-3')).toBe(CLEAR_POINTS);
+    expect(clearPoints('stage-2026-09-1')).toBe(CLEAR_POINTS);
+    expect(clearPoints('daily-2026-10-09')).toBe(CLEAR_POINTS);
+  });
+
+  it('月がかわると、同じ番号のステージでもまたもらえる', () => {
+    expect(addClear('stage-2026-10-1')).toBe(CLEAR_POINTS);
+    expect(addClear('stage-2026-10-1')).toBe(0);
+    expect(addClear('stage-2026-11-1')).toBe(CLEAR_POINTS);
+    expect(balance()).toBe(2 * CLEAR_POINTS);
+  });
+});
+
+describe('いらなくなった途中経過', () => {
+  const today = '2026-11-01';
+  it('前の日までの今日のパズルと、ほかの月のステージ、前の固定ステージ', () => {
+    expect(isStaleProgress('daily-2026-10-31', today)).toBe(true);
+    expect(isStaleProgress('daily-easy-2026-10-31', today)).toBe(true);
+    expect(isStaleProgress('daily-2026-11-01', today)).toBe(false);
+    expect(isStaleProgress('daily-easy-2026-11-01', today)).toBe(false);
+    expect(isStaleProgress('stage-2026-10-1', today)).toBe(true);
+    expect(isStaleProgress('easy-stage-2026-10-10', today)).toBe(true);
+    expect(isStaleProgress('stage-2026-11-1', today)).toBe(false);
+    expect(isStaleProgress('easy-stage-2026-11-10', today)).toBe(false);
+    expect(isStaleProgress('stage-3', today)).toBe(true);
+    expect(isStaleProgress('easy-stage-9', today)).toBe(true);
+  });
+
+  it('消すのは途中経過だけ。クリアの記録とポイントは残る', () => {
+    addClear('stage-2026-10-9');
+    addClear('stage-1');
+    const p = (done: boolean) => JSON.stringify({ sig: 'x', cells: ['あ'], revealed: [], done });
+    for (const id of ['stage-2026-10-9', 'stage-2026-10-2', 'stage-1', 'stage-2026-11-1', 'easy-stage-2026-11-2', 'daily-2026-10-31', 'daily-2026-11-01']) {
+      store.set(`wordlynx:v1:progress:${id}`, p(id.endsWith('9')));
+    }
+    const before = balance();
+    pruneOldProgress(today);
+    const left = [...store.keys()].filter((k) => k.includes(':progress:')).map((k) => k.split(':progress:')[1]);
+    expect(left.sort()).toEqual(['daily-2026-11-01', 'easy-stage-2026-11-2', 'stage-2026-11-1']);
+    expect(getClears()).toEqual(['stage-2026-10-9', 'stage-1']);
+    expect(balance()).toBe(before);
+  });
+});
 
 describe('ポイントの計算', () => {
   it('7 日連続するたびに 1000pt', () => {
@@ -336,9 +386,11 @@ function affordable(points: number): number {
 // 月の途中の 10/16 から始めるので、92 日目 (1/15) までに「1 か月そろった」は 11 月と 12 月の 2 回
 const EASY_START = '2026-10-16';
 const easyOnly = (n: number) => income(EASY_START, n, CLEAR_POINTS, 0);
-// いちばん多くもらえる人: 初級・上級の今日のパズルを毎日、全 20 ステージも最初の日にクリア
+// いちばん多くもらえる人: 初級・上級の今日のパズルを毎日、その月の全 20 ステージも月の最初の日にクリア
+// (ステージは月ごとに新しくなるので、遊んだ月の数だけもらえる)
 const ALL_STAGES = 2 * (8 * CLEAR_POINTS + 2 * CHALLENGE_POINTS);
-const maxPlayer = (start: string, n: number) => income(start, n, 2 * CLEAR_POINTS, ALL_STAGES);
+const monthsIn = (start: string, n: number) => new Set(days(start, n).map((d) => d.slice(0, 7))).size;
+const maxPlayer = (start: string, n: number) => income(start, n, 2 * CLEAR_POINTS, ALL_STAGES * monthsIn(start, n));
 
 describe('カードの値段のバランス', () => {
   it('初級を毎日の人は、はじめの 5 枚を 2 週間以内に手に入れられる', () => {
@@ -371,28 +423,30 @@ describe('カードの値段のバランス', () => {
     expect(average(gaps.slice(10))).toBeGreaterThanOrEqual(14);
   });
 
-  it('いちばん多くもらえる人でも、いつ始めても 88 日目までには全部そろわない', () => {
+  it('いちばん多くもらえる人でも、いつ始めても 76 日目までには全部そろわない', () => {
     // うるう年もふくめ、2 年分の開始日をすべて試す
     let start = '2027-01-01';
     let fastest = Infinity;
     for (let i = 0; i < 731; i++) {
-      // 日がたつほどポイントはふえるので、88 日目で足りなければ、それより前も足りない
-      expect(maxPlayer(start, 88), `${start} から 88 日目`).toBeLessThan(TOTAL);
-      let n = 89;
+      // 日がたつほどポイントはふえるので、76 日目で足りなければ、それより前も足りない
+      expect(maxPlayer(start, 76), `${start} から 76 日目`).toBeLessThan(TOTAL);
+      let n = 77;
       while (maxPlayer(start, n) < TOTAL) n++;
+      // 全部そろうのは、「1 か月そろった」が 2 回あってから
+      expect(earnedPoints(days(start, n)).months.length, `${start} から ${n} 日目`).toBeGreaterThanOrEqual(2);
       fastest = Math.min(fastest, n);
       start = addDays(start, 1);
     }
-    // いちばん早いのは、2/1 から始めて 4/30 に 3 か月分がそろう 89 日目
-    expect(fastest).toBe(89);
-    expect(maxPlayer('2027-02-01', 89)).toBeGreaterThanOrEqual(TOTAL);
+    // いちばん早いのは、1/15 から始めて 3/31 に 2・3 月分がそろい、4 か月分のステージもクリアした 77 日目
+    expect(fastest).toBe(77);
+    expect(maxPlayer('2027-01-15', 77)).toBeGreaterThanOrEqual(TOTAL);
   }, 60_000);
 
-  it('「1 か月そろった」が 3 回ないと、全部は集まらない', () => {
-    // 10/1 から始めた人の、12/31 (92 日目) の前の日まで
-    expect(maxPlayer('2026-10-01', 91)).toBe(27760);
-    expect(maxPlayer('2026-10-01', 91)).toBeLessThan(TOTAL);
-    expect(maxPlayer('2026-10-01', 92)).toBeGreaterThanOrEqual(TOTAL);
+  it('月の 1 日から始めたいちばん多くもらえる人は、12 月の後半にそろう', () => {
+    // 10/1 から始めた人の、12/23 (84 日目) の前の日まで
+    expect(maxPlayer('2026-10-01', 83)).toBe(27680);
+    expect(maxPlayer('2026-10-01', 83)).toBeLessThan(TOTAL);
+    expect(maxPlayer('2026-10-01', 84)).toBeGreaterThanOrEqual(TOTAL);
   });
 
   it('月の 1 日から始めれば、初級だけを毎日の人も 3 か月目の末に全部そろう', () => {

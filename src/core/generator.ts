@@ -221,3 +221,56 @@ export function generateDaily(words: readonly Word[], date: string, mode: Mode =
     targetWords: DAILY_WORDS[mode],
   });
 }
+
+// ---- ステージ (月ごとに作り直す) ----
+
+/** ステージの数。1〜8 は 10×10、9・10 は 20×20 のチャレンジ */
+export const STAGE_COUNT = 10;
+
+/** ステージ n (1〜10) の大きさと語数 */
+export function stageSpec(n: number, mode: Mode): { size: number; words: number; attempts: number } {
+  if (n > 8) return { size: 20, words: mode === 'easy' ? 40 : 48, attempts: 300 };
+  return { size: DAILY_SIZE, words: DAILY_WORDS[mode], attempts: 80 };
+}
+
+/** ステージは日本時間の月ごとに変わる。'2026-10' の形 */
+export function stageMonth(today: string): string {
+  return today.slice(0, 7);
+}
+
+export function stageId(month: string, n: number, mode: Mode): string {
+  return mode === 'easy' ? `easy-stage-${month}-${n}` : `stage-${month}-${n}`;
+}
+
+/**
+ * ステージ n で使う言葉の組。月ごとに語彙をまぜて、ステージどうしで重ならないように分ける
+ * (1〜8 は 1/32 ずつ、9・10 は残りを半分ずつ)。組が別なので、開いたステージだけを作ればよい。
+ */
+function stagePool(words: readonly Word[], month: string, n: number, mode: Mode): Word[] {
+  const mixed = shuffle(words, rngFromString(`wordlynx-stage-pool-${mode}-${month}`));
+  const small = Math.floor(mixed.length / 32);
+  const big = Math.floor((mixed.length - small * 8) / 2);
+  return n <= 8 ? mixed.slice((n - 1) * small, n * small) : mixed.slice(small * 8 + (n - 9) * big, small * 8 + (n - 8) * big);
+}
+
+/** 作ったステージを、語彙ごとに覚えておく (タイトル画面にもどってまた開いても、作り直さない) */
+const stageCache = new WeakMap<readonly Word[], Map<string, Puzzle>>();
+
+/** その月のステージ n。words には、そのモードの語彙をわたす。同じ月・同じ語彙なら、いつも同じ盤面になる */
+export function generateStage(words: readonly Word[], month: string, n: number, mode: Mode): Puzzle {
+  const id = stageId(month, n, mode);
+  let cache = stageCache.get(words);
+  if (!cache) stageCache.set(words, (cache = new Map()));
+  const cached = cache.get(id);
+  if (cached) return cached;
+  const spec = stageSpec(n, mode);
+  const puzzle = generate(stagePool(words, month, n, mode), {
+    id,
+    seed: mode === 'easy' ? `wordlynx-easy-stage-${month}-${n}` : `wordlynx-stage-${month}-${n}`,
+    size: spec.size,
+    targetWords: spec.words,
+    attempts: spec.attempts,
+  });
+  cache.set(id, puzzle);
+  return puzzle;
+}
