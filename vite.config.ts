@@ -37,6 +37,8 @@ function readFromConfigJs(name: string): string {
  * 環境変数があればその値、なければ config.js の値を使う。4 つそろっていなければ null で、
  * そのときはログインの入り口を出さず、Firebase のコードも読みこまれない。
  *   FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_APP_ID
+ * たいせん (Realtime Database) を使うときは、もう 1 つ FIREBASE_DATABASE_URL を入れる。
+ * なければ、ログインと保存だけが動き、たいせんの入り口は出さない。
  */
 function readFirebaseConfig(): Record<string, string> | null {
   // config.js に設定があっても、Firebase を入れないビルドを作りたいとき (テストなど): FIREBASE_DISABLED=1
@@ -51,7 +53,12 @@ function readFirebaseConfig(): Record<string, string> | null {
   const filled = Object.values(config).filter(Boolean).length;
   if (filled === 0) return null;
   if (filled < 4) throw new Error('Firebase の設定が足りません。FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID, FIREBASE_APP_ID の 4 つを入れてください');
-  return config;
+  // コンソールからコピーすると末尾に / が付くので、取りのぞいてから確かめる
+  const databaseURL = get('FIREBASE_DATABASE_URL')?.replace(/\/+$/, '');
+  if (databaseURL && !/^https:\/\/[\w.-]+$/.test(databaseURL)) {
+    throw new Error(`FIREBASE_DATABASE_URL の形式が正しくありません: "${databaseURL}" (https://….firebasedatabase.app など)`);
+  }
+  return databaseURL ? { ...config, databaseURL } : config;
 }
 
 /** GTM-… なら Google タグ マネージャー、G-… なら Google アナリティクス (gtag.js) のタグ */

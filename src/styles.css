@@ -1451,3 +1451,447 @@ rt {
   font-size: 0.6875rem;
   line-height: 1.4;
 }
+
+/* ---- たいせん ---- */
+.battle-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-top: -1rem;
+  padding: 0.8rem 1.25rem;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.battle-entry-text {
+  flex: 1 1 14rem;
+}
+
+.battle-page .bar,
+.battle-main {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.battle-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.5rem 1rem 4rem;
+}
+
+.battle-card {
+  display: grid;
+  justify-items: start;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 1.1rem 1.25rem 1.25rem;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.battle-card h2 {
+  font-size: 1.125rem;
+}
+
+.battle-lead {
+  font-size: 1rem;
+}
+
+.battle-note,
+.battle-muted {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.battle-label {
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.battle-field {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.battle-field label {
+  font-weight: 700;
+}
+
+.battle-input {
+  width: 100%;
+  max-width: 20rem;
+  min-height: 2.75rem;
+  padding: 0 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.0625rem;
+}
+
+.battle-error {
+  color: var(--red);
+  font-size: 0.875rem;
+}
+
+.battle-error:empty {
+  display: none;
+}
+
+.battle-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.battle-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.battle-mode {
+  min-height: 2.5rem;
+  padding: 0.1rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.battle-mode[aria-pressed='true'] {
+  border-color: var(--ink);
+  background: var(--mark);
+}
+
+.battle-code-row,
+.battle-url-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.battle-code-input {
+  flex: 1 1 8rem;
+  max-width: 12rem;
+  font-family: var(--hand);
+  font-size: 1.5rem;
+  letter-spacing: 0.2em;
+}
+
+.battle-url {
+  flex: 1 1 14rem;
+  max-width: none;
+  font-size: 0.875rem;
+}
+
+.battle-code {
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: clamp(2.5rem, 12vw, 3.5rem);
+  line-height: 1.1;
+  letter-spacing: 0.2em;
+}
+
+.battle-lobby {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.battle-invite {
+  justify-items: center;
+  text-align: center;
+}
+
+.battle-qr {
+  width: 168px;
+  height: 168px;
+  border: 6px solid #fff;
+  border-radius: 0.25rem;
+  background: #fff;
+}
+
+.battle-players {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.battle-players li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px dashed var(--rule-soft);
+}
+
+.battle-players li.is-offline {
+  opacity: 0.5;
+}
+
+.battle-player-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.battle-tag {
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: var(--rule-soft);
+  font-size: 0.75rem;
+}
+
+.battle-tag.is-you {
+  background: var(--mark);
+}
+
+.battle-start {
+  min-width: 10rem;
+}
+
+.battle-start:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.battle-message {
+  justify-items: center;
+  text-align: center;
+}
+
+.battle-countdown {
+  justify-items: center;
+  margin-top: 2rem;
+  font-weight: 700;
+}
+
+.battle-count {
+  font-family: var(--hand);
+  font-size: 6rem;
+  line-height: 1;
+  color: var(--red);
+}
+
+/* 対戦中: 見出しの下のタイマーと、みんなの進み具合。せまい画面でも高さをとらないよう 1 行にする */
+.battle-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0 0.75rem 0.35rem;
+}
+
+.battle-clock {
+  flex: none;
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.battle-chips {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 0.35rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.battle-top-side {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.battle-top-side:empty {
+  display: none;
+}
+
+.battle-top-side .btn {
+  min-height: 2rem;
+  padding: 0 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.battle-wait {
+  max-width: 9rem;
+  color: var(--muted);
+  font-size: 0.6875rem;
+  line-height: 1.3;
+}
+
+.battle-chip {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.1rem 0.4rem;
+  width: 7.25rem;
+  padding: 0.15rem 0.45rem 0.25rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 0.4rem;
+  background: var(--paper);
+  font-size: 0.6875rem;
+  line-height: 1.3;
+}
+
+.battle-chip.is-you {
+  border-color: var(--ink);
+}
+
+.battle-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.battle-chip-label {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.battle-chip.is-done .battle-chip-label {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.battle-chip.is-retired,
+.battle-chip.is-left {
+  opacity: 0.55;
+}
+
+.battle-chip-bar {
+  grid-column: 1 / -1;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: var(--rule-soft);
+  overflow: hidden;
+}
+
+.battle-chip-bar span {
+  display: block;
+  height: 100%;
+  background: var(--rule);
+  transition: width 0.3s;
+}
+
+.battle-chip.is-done .battle-chip-bar span {
+  background: var(--red);
+}
+
+/* 見出しの下にタイマーが入る分、盤面を少し小さくして、キーボードまで画面に入れる */
+.battle-game .board {
+  --fit: min(100%, 32.5rem, 100dvh - 29.5rem);
+}
+
+/* 広い画面: タイマーの行を見出しのすぐ下に、左右の列をまたいで置き、ほかの行を 1 つずつ下げる */
+@media (min-width: 62.5rem) {
+  .battle-game {
+    grid-template-rows: auto auto auto auto auto 1fr;
+  }
+
+  .battle-top {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding: 0 0 1rem;
+  }
+
+  .battle-chip {
+    width: 9rem;
+  }
+
+  .battle-game .board-scroll,
+  .battle-game .clues {
+    grid-row: 3;
+  }
+
+  .battle-game .now {
+    grid-row: 4;
+  }
+
+  .battle-game .tools {
+    grid-row: 5;
+  }
+
+  .battle-game .kbd {
+    grid-row: 4 / span 2;
+  }
+
+  .battle-game .board {
+    --fit: clamp(25rem, 100dvh - 23rem, 38rem);
+  }
+}
+
+.battle-result {
+  justify-items: stretch;
+}
+
+.battle-ranking {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.battle-ranking li {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px dashed var(--rule-soft);
+}
+
+.battle-ranking li.is-you {
+  background: var(--mark-soft);
+}
+
+.battle-rank {
+  font-family: var(--hand);
+  font-weight: 600;
+  font-size: 1.375rem;
+  text-align: center;
+}
+
+.battle-ranking li.is-top .battle-rank {
+  color: var(--red);
+}
+
+.battle-result-time {
+  display: grid;
+  justify-items: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.battle-result-time b {
+  font-size: 1.125rem;
+}
+
+.battle-result-time small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.battle-result > .btn,
+.battle-result > .battle-note {
+  justify-self: center;
+}
+
+.battle-result-foot {
+  display: flex;
+  justify-content: center;
+}

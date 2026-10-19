@@ -3,10 +3,11 @@ import { jstDate, type Mode, type Puzzle } from '../core/puzzle';
 import { balance, currentStreak, getMode, getSound, pruneOldDaily, setMode, setSound, statusOf } from '../core/storage';
 import presetsEasy from '../data/presets-easy.json';
 import presets from '../data/presets.json';
+import { battleAvailable } from '../cloud/config';
 import { accountBox } from './account';
 import { h, hanamaru } from './dom';
 import { lynx } from './lynx';
-import { TEXT, type Text } from './text';
+import { BATTLE, TEXT, type Text } from './text';
 
 /** 右の列を出す画面のはば (styles.css の .home と同じ値) */
 const WIDE = '(min-width: 64rem)';
@@ -130,6 +131,20 @@ export function renderHome(root: HTMLElement): void {
           dailyStatus === 'done' ? hanamaru('hanamaru hanamaru-daily') : null,
           h('a', { class: 'btn btn-primary', href: link(mode, 'daily') }, dailyAction),
         ),
+        // たいせんは、Realtime Database の設定が入っているビルドでだけ出す
+        battleAvailable
+          ? h(
+              'section',
+              { class: 'battle-entry', 'aria-labelledby': 'battle-title' },
+              h(
+                'div',
+                { class: 'battle-entry-text' },
+                h('h2', { id: 'battle-title' }, BATTLE.title),
+                h('p', { class: 'section-note' }, BATTLE.homeNote),
+              ),
+              h('a', { class: 'btn', href: '#/battle' }, BATTLE.homeButton),
+            )
+          : null,
         // スタンプカードとヤマネコカードは、それぞれのページで見る
         h(
           'nav',

@@ -24,7 +24,7 @@ export function restoreStore(): void {
 export async function startCloud(hooks: SyncHooks): Promise<void> {
   if (!firebaseConfig) return;
   const { createFirebase } = await import('./firebase');
-  const { remote, auth } = createFirebase(firebaseConfig, useEmulator);
+  const { remote, auth } = createFirebase(useEmulator);
   sync = new Sync(remote, auth, hooks);
   sync.start();
   // 画面をとじる前・かくれる前に、たまっている変更を送っておく

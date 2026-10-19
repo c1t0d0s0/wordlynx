@@ -20,6 +20,26 @@ import { TEXT } from './text';
 
 const other = (dir: Dir): Dir => (dir === 'across' ? 'down' : 'across');
 
+/**
+ * たいせんで盤面を使うときにわたすもの。たいせんでは途中経過を保存せず、ポイントも使わず・もらわない。
+ * ヒントは何回でも使えて、そのかわりにタイムがのびる (のびる分は、たいせんの画面で計算する)
+ */
+export interface BattleHooks {
+  /** 見出しのすぐ下に置くもの (タイマーと、ほかの人の進み具合) */
+  top: HTMLElement;
+  /** ヒントのボタンの文字 */
+  hintLabel: string;
+  /** ヒントを使ったときに出す文 */
+  hintNote: (hints: number) => string;
+  retireLabel: string;
+  retireConfirm: string;
+  /** マスがうまったり、消えたりしたとき */
+  onProgress(filled: number, total: number, hints: number): void;
+  /** 全部のマスが正しくうまったとき */
+  onFinish(filled: number, total: number, hints: number): void;
+  onRetire(): void;
+}
+
 /** 盤面の画面を作る。もどり値は、画面をはなれるときの後かたづけ */
 export function renderGame(
   root: HTMLElement,
@@ -27,11 +47,15 @@ export function renderGame(
   title: string,
   mode: Mode,
   dailyDate?: string,
+  battle?: BattleHooks,
 ): () => void {
   const t = TEXT[mode];
   const n = puzzle.size;
   const solution = solutionGrid(puzzle);
-  let progress = loadProgress(puzzle);
+  let progress = battle ? freshProgress(puzzle) : loadProgress(puzzle);
+  const save = () => {
+    if (!battle) saveProgress(puzzle.id, progress);
+  };
   const revealed = new Set(progress.revealed);
   const wrong = new Set<number>();
   const romaji = new RomajiInput();
@@ -136,7 +160,9 @@ export function renderGame(
     reviewBtn,
     // ヒントのボタンのすぐあとに置く。せまい画面では次の行の左、広い画面ではヒントの右にならぶ
     pointsBox,
-    h('button', { type: 'button', class: 'btn btn-quiet', onclick: restart }, t.restart),
+    battle
+      ? h('button', { type: 'button', class: 'btn btn-quiet only-playing', onclick: retire }, battle.retireLabel)
+      : h('button', { type: 'button', class: 'btn btn-quiet', onclick: restart }, t.restart),
     status,
   );
 
@@ -150,6 +176,7 @@ export function renderGame(
       h('h1', {}, title),
       h('span', { class: 'bar-meta' }, t.words(entries.length)),
     ),
+    battle?.top,
     h('div', { class: 'play' }, h('div', { class: 'board-scroll' }, board), clues),
     h('div', { class: 'dock' }, now, tools, renderKeyboard(onScreenKey)),
   );
@@ -237,9 +264,22 @@ export function renderGame(
 
   function afterEdit(): void {
     status.textContent = '';
-    saveProgress(puzzle.id, progress);
+    save();
     paintSelection();
     if (!progress.done && progress.cells.every((c, i) => solution[i] === null || c === solution[i])) finish();
+    else if (battle && !progress.done) battle.onProgress(...counts(), hintsUsed());
+  }
+
+  /** うまっているマスの数と、全部のマスの数 */
+  function counts(): [number, number] {
+    let filled = 0;
+    let total = 0;
+    progress.cells.forEach((c, i) => {
+      if (solution[i] === null) return;
+      total++;
+      if (c !== '') filled++;
+    });
+    return [filled, total];
   }
 
   function typeKana(ch: string): void {
@@ -332,8 +372,8 @@ export function renderGame(
       status.textContent = t.hintAlready;
       return;
     }
-    // 無料の回数を使い切ったら、1 回ごとにポイントがいる
-    const paid = hintsUsed() >= FREE_HINTS;
+    // 無料の回数を使い切ったら、1 回ごとにポイントがいる (たいせんでは使わない)
+    const paid = !battle && hintsUsed() >= FREE_HINTS;
     if (paid && !spendPoints(HINT_COST, puzzle.id)) {
       status.textContent = t.hintShort(balance());
       return;
@@ -350,6 +390,7 @@ export function renderGame(
     afterEdit();
     paintHintButton();
     if (paid && !progress.done) status.textContent = t.hintSpent(balance());
+    if (battle && !progress.done) status.textContent = battle.hintNote(hintsUsed());
   }
 
   /** このパズルでヒントを使った回数 (回数を記録する前の途中経過は、開けたマスの数で数える) */
@@ -358,6 +399,11 @@ export function renderGame(
   }
 
   function paintHintButton(): void {
+    if (battle) {
+      hintBtn.textContent = battle.hintLabel;
+      pointsBox.remove(); // たいせんではポイントを使わない
+      return;
+    }
     const left = FREE_HINTS - hintsUsed();
     hintBtn.textContent = left > 0 ? t.hintFree(left) : t.hintPaid;
     pointsNum.textContent = t.points(balance());
@@ -365,6 +411,11 @@ export function renderGame(
 
   function finish(): void {
     progress.done = true;
+    if (battle) {
+      page.classList.add('is-done');
+      battle.onFinish(...counts(), hintsUsed());
+      return;
+    }
     saveProgress(puzzle.id, progress);
     if (dailyDate) recordDailyClear(dailyDate, mode);
     // スタンプは初級・上級で共通。同じ日に両方クリアしても 1 個
@@ -385,6 +436,13 @@ export function renderGame(
     });
   }
 
+  function retire(): void {
+    if (!battle || progress.done || !confirm(battle.retireConfirm)) return;
+    progress.done = true;
+    page.classList.add('is-done', 'is-retired');
+    battle.onRetire();
+  }
+
   function restart(): void {
     if (!confirm(t.restartConfirm)) return;
     // ヒントの回数は、やりなおしてももどさない
@@ -393,7 +451,7 @@ export function renderGame(
     progress.hints = used;
     revealed.clear();
     wrong.clear();
-    saveProgress(puzzle.id, progress);
+    save();
     page.classList.remove('is-done');
     status.textContent = '';
     cellEls.forEach((cell, i) => cell && paintCell(i));

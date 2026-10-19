@@ -1,10 +1,7 @@
 // Firebase を使う部分は、このファイルだけにまとめる。
 // main.ts から「あとで」読みこむので、Firebase を使わない人の最初の表示はおそくならない。
-import { initializeApp } from 'firebase/app';
 import {
   GoogleAuthProvider,
-  connectAuthEmulator,
-  getAuth,
   onAuthStateChanged,
   signInWithCredential,
   signInWithPopup,
@@ -31,18 +28,16 @@ import {
   type ProgressDoc,
   type Snapshot,
 } from '../core/snapshot';
-import type { FirebaseConfig } from './config';
+import { firebaseApp, firebaseAuth } from './app';
 import type { AuthPort, Remote } from './sync';
 
-export function createFirebase(config: FirebaseConfig, emulator: boolean): { remote: Remote; auth: AuthPort } {
-  const app = initializeApp(config);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+export function createFirebase(emulator: boolean): { remote: Remote; auth: AuthPort } {
+  const auth = firebaseAuth();
+  const db = getFirestore(firebaseApp());
   // エミュレーターには本物の Google ログインの画面がないので、テストから「だれとしてログインするか」を
   // 指定できるようにする (window.__testUser)。本番のビルドでは emulator が false なので使われない
   const testHooks = window as unknown as { __testUser?: string; __testIdToken?: () => Promise<string | undefined> };
   if (emulator) {
-    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
     connectFirestoreEmulator(db, '127.0.0.1', 8080);
     testHooks.__testIdToken = async () => auth.currentUser?.getIdToken();
   }
@@ -87,7 +82,8 @@ export function createFirebase(config: FirebaseConfig, emulator: boolean): { rem
 
   const authPort: AuthPort = {
     onUser(cb) {
-      onAuthStateChanged(auth, (user) => cb(user ? user.uid : null));
+      // たいせんのために匿名でログインしている人は、記録の保存では「ログインしていない人」としてあつかう
+      onAuthStateChanged(auth, (user) => cb(user && !user.isAnonymous ? user.uid : null));
     },
     async signIn() {
       if (emulator && testHooks.__testUser) {

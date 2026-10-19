@@ -10,6 +10,7 @@
 - スタンプカード: 今日のパズルをクリアするとスタンプが 1 個。続けるとポイントがたまり、ヤマネコのカード (20 種類) と交換できる
 - クリアすると、出てきた言葉が 1 つずつ大きくなって爆発する演出と効果音 (音はタイトル画面の「音：オン／オフ」で切りかえ)
 - 記録はブラウザ (localStorage) に保存。Google でログインすると Firestore に保存され、ほかのブラウザや端末でも同じ記録で遊べる (ログインは任意)
+- たいせん: 対戦ごとに作るパズルを 2〜8 人で同時に解いて、タイムを競う。対戦コード (数字 5 けた)・招待の URL・QR コードで部屋に入る (Firebase Realtime Database を使う)
 
 ## 使い方
 
@@ -153,9 +154,65 @@ users/{uid}/apps/{appId}/progress/{itemId}    教材 1 つごとの途中経過
 本物の Firebase を使わずに、手元でログインと保存をためせます (Java が必要)。
 
 ```sh
-npx firebase-tools emulators:start --only auth,firestore --project demo-wordlynx
-FIREBASE_API_KEY=x FIREBASE_AUTH_DOMAIN=localhost FIREBASE_PROJECT_ID=demo-wordlynx FIREBASE_APP_ID=x FIREBASE_EMULATOR=1 npm run dev
+npx firebase-tools emulators:start --only auth,firestore,database --project demo-wordlynx
+FIREBASE_API_KEY=x FIREBASE_AUTH_DOMAIN=localhost FIREBASE_PROJECT_ID=demo-wordlynx FIREBASE_APP_ID=x \
+  FIREBASE_DATABASE_URL=https://demo-wordlynx-default-rtdb.firebaseio.com FIREBASE_EMULATOR=1 npm run dev
 ```
+
+## たいせん (Firebase Realtime Database)
+
+同じパズルを 2〜8 人で同時に解いて、タイムを競います。ポイント・スタンプ・途中経過は記録しません。
+**`FIREBASE_DATABASE_URL` が入っていないビルドでは、たいせんの入り口は出ず、そのコードも読みこまれません。**
+
+### 遊び方
+
+1. タイトル画面の「たいせんする」から、名前 (ニックネーム、10 文字まで) を入れて「へやを つくる」(初級か上級をえらぶ)
+2. 出てきた対戦コード (数字 5 けた)・QR コード・招待の URL を、友だちに見せる。友だちは URL か QR コードから開くか、
+   「コードで はいる」にコードを打って入る (8 人まで)
+3. 2 人以上そろったら、部屋を作った人 (ホスト) が「スタート」。3・2・1 のあと、全員に同じ盤面が出る
+4. 画面の上にタイマーと、みんなの「うまったマスの数」が出る (入れた字は見えない)。ヒントは何回でも使えるが、1 回ごとにタイムに 30 秒足される
+5. 全員が解き終わるか (リタイア・ぬけた人はのぞく)、ホストが「おわりに する」をおすと、けっか (順位とタイム) が出る。
+   ホストの「もういちど」で、同じ部屋のまま新しいパズルで次の対戦になる
+
+### 仕組み
+
+- パズルは各端末で作る。Realtime Database には乱数の種 (seed) だけを置き、全員が同じ種と同じ語彙から同じ盤面を作る
+  (`src/core/battle.ts` の `battlePuzzle`)。公開をはさんで語彙が変わると盤面がずれるので、語彙の指紋 (`vocab`) を部屋に入れておき、
+  ちがう人には「ページを 読みこみ直してね」と出す
+- タイムはサーバーの時計で測る。スタート時刻 (`startAt`) と、ゴールの時刻 (`finishedAt`、サーバーの時刻だけを受けつける) の差に、ヒント × 30 秒を足す
+- 部屋に入るときは匿名でログインする (Google でログイン中なら、そのアカウント)。匿名のログインでは、Firestore への記録の保存は始めない
+- タブを閉じた人は「ぬけた」になる (`onDisconnect`)。ホストが部屋を出ると部屋は消える。作ってから 1 日たった部屋は、次に同じ番号で部屋を作る人が上書きできる
+
+```
+battles/{code}                 code = 数字 5 けた (0 から始まらない)
+  app: "wordlynx", hostUid, createdAt, mode: "easy" | "standard", vocab
+  round: 1, 2, …               「もういちど」でふえる
+  seed, status: "waiting" | "playing" | "finished", startAt
+  players/{seat}               seat = 0〜7 (ルールで人数を数えられないので、席を 8 つにして人数をおさえる)
+    uid, name, joinedAt, online, round, filled, total, hints, finishedAt?, retired?
+```
+
+ルール (`database.rules.json`) では、次のことを確かめています。
+
+- 読めるのはログインしている人だけ。部屋の一覧は読めない
+- 部屋を作れるのは、まだその番号の部屋がないとき (または 1 日以上前の部屋のとき) だけ
+- `status`・`seed`・`startAt`・`round` を変えたり、部屋を消したりできるのはホストだけ
+- 席にすわれるのは、待っている間で、自分の uid のときだけ。書きかえられるのは自分の席だけ
+- 名前は 1〜20 (UTF-16 の長さ。画面では 10 文字まで)、数はマイナスにできない、決まっていない項目は入れられない
+
+### Realtime Database の準備
+
+1. Firebase コンソール → Realtime Database でデータベースを作る (場所は `asia-southeast1` など)。ルールに `database.rules.json` の内容を貼る
+2. Authentication → ログイン方法 で **匿名** を有効にする
+3. データベースの URL (`https://….firebasedatabase.app` など) を入れる
+   - 手元: `config.js` に `const FIREBASE_DATABASE_URL = '…';`
+   - GitHub Pages: Actions の Variables に `FIREBASE_DATABASE_URL`
+
+### 知っておくこと (保護者・先生向け)
+
+- 名前は自由に入れられます。画面に「ほんとうの 名前は 入れないでね」と出していますが、本名を入れないよう声をかけてください。
+  名前は対戦コードを知っている人にだけ見え、部屋が消えるといっしょに消えます
+- 答え合わせは各端末で行うので、不正を完全には防げません。友だちや家族どうしで遊ぶためのものです
 
 ## アクセス解析 (Google のタグ)
 
@@ -211,5 +268,6 @@ npm run presets -- easy       # 初級モード   → src/data/presets-easy.json
 - `src/core/kana.ts` かなの正規化、濁点、ローマ字変換
 - `src/ui/` ホーム、盤面、キーボード、クリア画面
 - `src/core/merge.ts`, `src/core/snapshot.ts` 記録を合わせる決まりと、Firestore に保存する形
-- `src/cloud/` ログインと Firestore との同期 (Firebase に依存するのは `firebase.ts` だけ)
+- `src/cloud/` ログインと Firestore との同期、たいせんの通信 (Firebase に依存するのは `app.ts`・`firebase.ts`・`battle-net.ts` だけ)
+- `src/core/battle.ts`, `src/ui/battle.ts` たいせんの決まり (コード・盤面・順位) と画面
 - `tests/` 生成結果の正しさ、1 年分のデイリー、語彙データの検査

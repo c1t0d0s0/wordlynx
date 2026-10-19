@@ -5,6 +5,7 @@ import { jstDate, type Mode } from './core/puzzle';
 import { applyGrade, getMode, migrateCardPrices, migrateMode, migrateRewards } from './core/storage';
 import { CARDS } from './data/cards';
 import { EASY_WORDS, WORDS } from './data/words';
+import { renderBattle } from './ui/battle';
 import { renderCards } from './ui/cards';
 import { renderGame } from './ui/game';
 import { renderHome, stageByNumber } from './ui/home';
@@ -34,12 +35,16 @@ function route(): void {
   const t = TEXT[mode];
   const num = Number(match?.[3]);
   const stage = match?.[3] ? stageByNumber(mode, num) : undefined;
+  // #/battle は、たいせんの入口。#/battle/12345 は、その対戦コードの部屋
+  const battle = location.hash.match(/^#\/battle(?:\/(\d{5}))?$/);
   if (match?.[2] === 'daily') {
     const today = jstDate();
     const words = mode === 'easy' ? EASY_WORDS : WORDS;
     cleanup = renderGame(app, generateDaily(words, today, mode), t.daily, mode, today);
   } else if (stage) {
     cleanup = renderGame(app, stage, num > 8 ? t.challengeTitle(num) : t.stageTitle(num), mode);
+  } else if (battle) {
+    cleanup = renderBattle(app, battle[1]);
   } else if (location.hash === '#/cards') {
     renderCards(app);
   } else if (location.hash === '#/stamps') {
