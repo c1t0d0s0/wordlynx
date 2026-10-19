@@ -20,5 +20,8 @@
   "dependencies": {
     "firebase": "^13.0.0",
     "qrcode": "^1.5.4"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.5"
   }
 }
