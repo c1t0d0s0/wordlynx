@@ -164,18 +164,23 @@ function wordFor(word: Word, seed: string): Word {
   return { ...rest, example: examples[hashString(`${seed}:${word.reading}`) % examples.length] };
 }
 
-function toPuzzle(id: string, b: Board, seed: string): Puzzle {
+/** 置いた言葉を、左上から順にならべて番号をふる (同じマスから始まるヨコとタテは同じ番号) */
+export function numberEntries(placed: readonly Omit<Entry, 'num'>[], size: number): Entry[] {
   const starts = new Map<number, number>();
-  const sorted = b.placed
+  const sorted = placed
     .slice()
-    .sort((x, y) => x.row * b.size + x.col - (y.row * b.size + y.col) || (x.dir === 'across' ? -1 : 1));
+    .sort((x, y) => x.row * size + x.col - (y.row * size + y.col) || (x.dir === y.dir ? 0 : x.dir === 'across' ? -1 : 1));
   let next = 1;
-  const entries: Entry[] = sorted.map((p) => {
-    const idx = p.row * b.size + p.col;
+  return sorted.map((p) => {
+    const idx = p.row * size + p.col;
     if (!starts.has(idx)) starts.set(idx, next++);
-    return { num: starts.get(idx)!, dir: p.dir, row: p.row, col: p.col, answer: p.answer, word: wordFor(p.word, seed) };
+    return { num: starts.get(idx)!, dir: p.dir, row: p.row, col: p.col, answer: p.answer, word: p.word };
   });
-  return { id, size: b.size, entries };
+}
+
+function toPuzzle(id: string, b: Board, seed: string): Puzzle {
+  const placed = b.placed.map((p) => ({ ...p, word: wordFor(p.word, seed) }));
+  return { id, size: b.size, entries: numberEntries(placed, b.size) };
 }
 
 export interface GenerateOptions {

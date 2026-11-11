@@ -40,15 +40,17 @@ export interface BattleHooks {
   onRetire(): void;
 }
 
+export interface GameOptions {
+  /** 今日のパズルなら、その日付。クリアするとスタンプが押される */
+  dailyDate?: string;
+  battle?: BattleHooks;
+  /** だれかが作ったパズル。ポイントやスタンプはもらえず、ヒントは何回でも使える */
+  custom?: boolean;
+}
+
 /** 盤面の画面を作る。もどり値は、画面をはなれるときの後かたづけ */
-export function renderGame(
-  root: HTMLElement,
-  puzzle: Puzzle,
-  title: string,
-  mode: Mode,
-  dailyDate?: string,
-  battle?: BattleHooks,
-): () => void {
+export function renderGame(root: HTMLElement, puzzle: Puzzle, title: string, mode: Mode, opts: GameOptions = {}): () => void {
+  const { dailyDate, battle, custom } = opts;
   const t = TEXT[mode];
   const n = puzzle.size;
   const solution = solutionGrid(puzzle);
@@ -206,9 +208,11 @@ export function renderGame(
     });
     const e: Entry = entries[active];
     nowTag.textContent = `${t.dir[e.dir]} ${e.num}`;
-    nowPos.textContent = t.meta(e.word.pos, e.answer.length);
+    // 作ったパズルの言葉には、品詞がなく、例文もないことがある
+    nowPos.textContent = e.word.pos ? t.meta(e.word.pos, e.answer.length) : t.len(e.answer.length);
     nowClue.replaceChildren(...withRuby('span', '', e.word.clue).childNodes);
-    nowExample.replaceChildren(...withRuby('span', '', `${t.example}${e.word.example}`).childNodes);
+    nowExample.hidden = !e.word.example;
+    nowExample.replaceChildren(...(e.word.example ? withRuby('span', '', `${t.example}${e.word.example}`).childNodes : []));
     if (scroll) {
       cellEls[sel.idx]!.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       // カギの一覧が横にならぶ広い画面でだけ、一覧も追いかける
@@ -372,8 +376,8 @@ export function renderGame(
       status.textContent = t.hintAlready;
       return;
     }
-    // 無料の回数を使い切ったら、1 回ごとにポイントがいる (たいせんでは使わない)
-    const paid = !battle && hintsUsed() >= FREE_HINTS;
+    // 無料の回数を使い切ったら、1 回ごとにポイントがいる (たいせんと、作ったパズルでは使わない)
+    const paid = !battle && !custom && hintsUsed() >= FREE_HINTS;
     if (paid && !spendPoints(HINT_COST, puzzle.id)) {
       status.textContent = t.hintShort(balance());
       return;
@@ -399,9 +403,9 @@ export function renderGame(
   }
 
   function paintHintButton(): void {
-    if (battle) {
-      hintBtn.textContent = battle.hintLabel;
-      pointsBox.remove(); // たいせんではポイントを使わない
+    if (battle || custom) {
+      hintBtn.textContent = battle ? battle.hintLabel : t.hint;
+      pointsBox.remove(); // たいせんと、作ったパズルではポイントを使わない
       return;
     }
     const left = FREE_HINTS - hintsUsed();
@@ -420,7 +424,8 @@ export function renderGame(
     if (dailyDate) recordDailyClear(dailyDate, mode);
     // スタンプは初級・上級で共通。同じ日に両方クリアしても 1 個
     const stamp = dailyDate ? addStamp(dailyDate) : undefined;
-    const clearPoints = addClear(puzzle.id);
+    // 作ったパズルは、クリアの記録にも入れない (ポイントはもらえない)
+    const clearPoints = custom ? 0 : addClear(puzzle.id);
     page.classList.add('is-done');
     // 記録をすませてから演出を出す。出てきた言葉が 1 つずつ大きくなって、ばくはつする
     void playClear(entries.map((e) => e.word.reading)).then(() => {

@@ -243,7 +243,7 @@ export class Sync {
     }
     // 前の日までの今日のパズルと、前の月までのステージの途中経過は、もういらない
     const today = jstDate();
-    const stale = Object.keys(merged.progress).filter((id) => isStaleProgress(id, today));
+    const stale = Object.keys(merged.progress).filter((id) => isStaleProgress(id, today, merged.progress[id].at));
     for (const id of stale) delete merged.progress[id];
 
     const localChanged = !sameSnapshot(merged, exportSnapshot());
@@ -254,8 +254,8 @@ export class Sync {
       const theirs = remote?.progress[id];
       if (!theirs || JSON.stringify(theirs) !== JSON.stringify(p)) await this.remote.saveProgress(uid, id, p);
     }
-    for (const id of Object.keys(remote?.progress ?? {})) {
-      if (isStaleProgress(id, today)) await this.remote.deleteProgress(uid, id);
+    for (const [id, p] of Object.entries(remote?.progress ?? {})) {
+      if (isStaleProgress(id, today, p.at)) await this.remote.deleteProgress(uid, id);
     }
 
     // Firestore に入ったのを確かめてから、ログインなしの記録を消す (二重にうつらないように)

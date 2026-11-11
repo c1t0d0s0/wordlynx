@@ -19,6 +19,7 @@ import type { BattleNet } from '../cloud/battle-net';
 import { battleAvailable } from '../cloud/config';
 import { h, homeButton } from './dom';
 import { renderGame } from './game';
+import { qrCanvas, shareRow } from './share';
 import { BATTLE as B } from './text';
 
 const HINT_SEC = HINT_PENALTY_MS / 1000;
@@ -359,22 +360,6 @@ export function renderBattle(root: HTMLElement, code?: string): () => void {
         gameRound = 0;
         myDone = false;
         const url = inviteUrl(code);
-        const canvas = h('canvas', { class: 'battle-qr', width: 168, height: 168, 'aria-label': 'QRコード' });
-        void import('./qr').then((m) => m.renderInviteQr(canvas, url)).catch(() => canvas.remove());
-        const urlInput = h('input', { type: 'text', class: 'battle-input battle-url', readonly: true, value: url, 'aria-label': 'URL' });
-        const copyBtn = h('button', { type: 'button', class: 'btn' }, B.copyUrl);
-        copyBtn.addEventListener('click', () => {
-          const done = () => {
-            copyBtn.textContent = B.copied;
-            setTimeout(() => (copyBtn.textContent = B.copyUrl), 2000);
-          };
-          if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, () => urlInput.select());
-          else urlInput.select();
-        });
-        const shareBtn =
-          typeof navigator.share === 'function'
-            ? h('button', { type: 'button', class: 'btn', onclick: () => void navigator.share({ title: 'Wordlynx', text: B.shareText, url }).catch(() => {}) }, B.share)
-            : null;
         const list = h('ul', { class: 'battle-players' });
         const note = h('p', { class: 'battle-note' });
         const start = host
@@ -391,9 +376,9 @@ export function renderBattle(root: HTMLElement, code?: string): () => void {
               h('h2', { id: 'battle-code-title' }, B.waitingTitle),
               h('p', { class: 'battle-code' }, code),
               h('p', { class: 'battle-note' }, `${B.modeLabel}：${modeName(r.mode)}`),
-              canvas,
+              qrCanvas(url),
               h('p', { class: 'battle-note' }, B.shareNote),
-              h('div', { class: 'battle-url-row' }, urlInput, copyBtn, shareBtn),
+              shareRow(url, { copy: B.copyUrl, copied: B.copied, share: B.share, shareText: B.shareText }),
             ),
             h(
               'section',
@@ -466,22 +451,24 @@ export function renderBattle(root: HTMLElement, code?: string): () => void {
       top = { clock, chips, side };
       // せまい画面でも盤面とキーボードが入るよう、タイマー・みんなの進み具合・ボタンを 1 行にならべる
       const topEl = h('div', { class: 'battle-top' }, clock, chips, side);
-      stopGameFn = renderGame(root, puzzle, B.title, mode, undefined, {
-        top: topEl,
-        hintLabel: B.hint(HINT_SEC),
-        hintNote: (k) => B.hintNote(k, HINT_SEC),
-        retireLabel: B.retire,
-        retireConfirm: B.retireConfirm,
-        onProgress: (filled, total, hints) => n.progress(code, filled, total, hints),
-        onFinish: (filled, total, hints) => {
-          myDone = true;
-          void n.finish(code, filled, total, hints);
-          if (room) paintTop(room);
-        },
-        onRetire: () => {
-          myDone = true;
-          void n.retire(code);
-          if (room) paintTop(room);
+      stopGameFn = renderGame(root, puzzle, B.title, mode, {
+        battle: {
+          top: topEl,
+          hintLabel: B.hint(HINT_SEC),
+          hintNote: (k) => B.hintNote(k, HINT_SEC),
+          retireLabel: B.retire,
+          retireConfirm: B.retireConfirm,
+          onProgress: (filled, total, hints) => n.progress(code, filled, total, hints),
+          onFinish: (filled, total, hints) => {
+            myDone = true;
+            void n.finish(code, filled, total, hints);
+            if (room) paintTop(room);
+          },
+          onRetire: () => {
+            myDone = true;
+            void n.retire(code);
+            if (room) paintTop(room);
+          },
         },
       });
       root.querySelector('.game')?.classList.add('battle-game');

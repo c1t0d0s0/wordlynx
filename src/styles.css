@@ -1904,3 +1904,118 @@ rt {
   display: flex;
   justify-content: center;
 }
+
+/* ---- パズルを作る ---- */
+.bar h1 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.create-form,
+.create-preview {
+  justify-items: stretch;
+}
+
+.create-form > .btn,
+.create-preview > .btn {
+  justify-self: start;
+}
+
+.create-rows {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.create-row {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: start;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule);
+}
+
+.create-no {
+  padding-top: 1.6rem;
+  color: var(--muted);
+  font-weight: 700;
+  text-align: right;
+}
+
+.create-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.4rem;
+}
+
+.create-field {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.create-field-label {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.create-field .battle-input {
+  max-width: none;
+}
+
+.create-remove {
+  min-width: 2.5rem;
+  margin-top: 1.2rem;
+  padding: 0;
+  font-size: 1.25rem;
+}
+
+/* 広い画面では、よみとカギを 1 行にならべる */
+@media (min-width: 36rem) {
+  .create-fields {
+    grid-template-columns: 11rem minmax(0, 1fr);
+  }
+
+  .create-fields > :nth-child(n + 3) {
+    grid-column: 1 / -1;
+  }
+}
+
+.create-board {
+  --fit: min(100%, 22rem);
+  --min-cell: 24px;
+}
+
+.create-unplaced ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0.25rem 0;
+  font-family: var(--hand);
+  font-weight: 600;
+}
+
+.create-share {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+
+.create-share:empty {
+  display: none;
+}
+
+.create-share h3 {
+  font-size: 1.0625rem;
+}
+
+.broken {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 0 1rem;
+  text-align: center;
+}

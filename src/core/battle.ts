@@ -1,7 +1,7 @@
 // たいせん (同じパズルを何人かで同時に解いて、タイムを競う) の決まりごと。
 // 通信や画面には依存しない純粋な関数だけを置く。
 import { DAILY_SIZE, DAILY_WORDS, generate } from './generator';
-import type { Mode, Puzzle, Word } from './puzzle';
+import { cleanText, type Mode, type Puzzle, type Word } from './puzzle';
 import { hashString } from './rng';
 
 /** 1 つの部屋に入れる人数 */
@@ -103,8 +103,7 @@ export function battlePuzzle(words: readonly Word[], mode: Mode, code: string, r
 
 /** 名前を整える。前後の空白と制御文字を消し、続く空白は 1 つにして、NAME_MAX 文字までにする */
 export function cleanName(input: string): string {
-  const s = input.replace(/[\p{Cc}\p{Cf}\u2028\u2029]/gu, '').replace(/\s+/g, ' ').trim();
-  return [...s].slice(0, NAME_MAX).join('');
+  return cleanText(input, NAME_MAX);
 }
 
 export type StandingStatus = 'done' | 'playing' | 'retired' | 'left';

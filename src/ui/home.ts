@@ -6,7 +6,7 @@ import { battleAvailable } from '../cloud/config';
 import { accountBox } from './account';
 import { h, hanamaru } from './dom';
 import { lynx } from './lynx';
-import { BATTLE, TEXT, type Text } from './text';
+import { BATTLE, CUSTOM, TEXT, type Text } from './text';
 
 /** 右の列を出す画面のはば (styles.css の .home と同じ値) */
 const WIDE = '(min-width: 64rem)';
@@ -141,6 +141,18 @@ export function renderHome(root: HTMLElement): void {
               h('a', { class: 'btn', href: '#/battle' }, BATTLE.homeButton),
             )
           : null,
+        // パズルを作るのは、どのビルドでもできる (中身は URL に入れるので、通信はいらない)
+        h(
+          'section',
+          { class: 'battle-entry', 'aria-labelledby': 'create-title' },
+          h(
+            'div',
+            { class: 'battle-entry-text' },
+            h('h2', { id: 'create-title' }, CUSTOM.title),
+            h('p', { class: 'section-note' }, CUSTOM.homeNote),
+          ),
+          h('a', { class: 'btn', href: '#/create' }, CUSTOM.homeButton),
+        ),
         // スタンプカードとヤマネコカードは、それぞれのページで見る
         h(
           'nav',

@@ -33,6 +33,8 @@ describe('ステージのポイント', () => {
     expect(clearPoints('stage-2026-10-3')).toBe(CLEAR_POINTS);
     expect(clearPoints('stage-2026-09-1')).toBe(CLEAR_POINTS);
     expect(clearPoints('daily-2026-10-09')).toBe(CLEAR_POINTS);
+    // 自分たちで作ったパズルでは、もらえない
+    expect(clearPoints('custom-1abc2de')).toBe(0);
   });
 
   it('月がかわると、同じ番号のステージでもまたもらえる', () => {
@@ -56,6 +58,20 @@ describe('いらなくなった途中経過', () => {
     expect(isStaleProgress('easy-stage-2026-11-10', today)).toBe(false);
     expect(isStaleProgress('stage-3', today)).toBe(true);
     expect(isStaleProgress('easy-stage-9', today)).toBe(true);
+  });
+
+  it('作ったパズルは、さいごにさわってから 30 日たったもの', () => {
+    const day = 86_400_000;
+    const start = Date.parse(`${today}T00:00:00Z`);
+    expect(isStaleProgress('custom-1abc2de', today, start - 31 * day)).toBe(true);
+    expect(isStaleProgress('custom-1abc2de', today, start - 29 * day)).toBe(false);
+    expect(isStaleProgress('custom-1abc2de', today)).toBe(false); // 時刻のない記録は消さない
+    const old = { sig: 's', cells: ['あ'], revealed: [], done: false, at: start - 31 * day };
+    store.set('wordlynx:v1:progress:custom-old', JSON.stringify(old));
+    store.set('wordlynx:v1:progress:custom-new', JSON.stringify({ ...old, at: start - day }));
+    pruneOldProgress(today);
+    expect(store.has('wordlynx:v1:progress:custom-old')).toBe(false);
+    expect(store.has('wordlynx:v1:progress:custom-new')).toBe(true);
   });
 
   it('消すのは途中経過だけ。クリアの記録とポイントは残る', () => {

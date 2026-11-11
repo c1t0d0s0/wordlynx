@@ -46,6 +46,26 @@ export function rememberUid(uid: string | null): void {
   }
 }
 
+/** パズルを作る画面の下書き。端末にだけ置き、ログインしても同期しない */
+const DRAFT_KEY = 'wordlynx:custom-draft';
+
+export function loadDraft(): unknown {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveDraft(draft: unknown): void {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    /* 保存できなくても続行 */
+  }
+}
+
 /** 記録が書きかわったら知らせてもらう (Firestore に送るため)。key は「stamps」「progress:stage-1」など */
 export function onStorageChange(cb: ((key: string) => void) | null): void {
   listener = cb;
@@ -175,7 +195,11 @@ export function currentStreak(today: string, mode: Mode): number {
 /** 前の日までの今日のパズルと、前の月までのステージの途中経過を消す */
 export function pruneOldProgress(today: string): void {
   for (const key of keys()) {
-    if (key.startsWith('progress:') && isStaleProgress(key.slice('progress:'.length), today)) removeKey(prefix + key);
+    if (!key.startsWith('progress:')) continue;
+    const id = key.slice('progress:'.length);
+    // 作ったパズルは、さいごにさわった時刻で決める
+    const at = id.startsWith('custom-') ? read<Progress>(key)?.at : undefined;
+    if (isStaleProgress(id, today, at)) removeKey(prefix + key);
   }
 }
 
@@ -187,11 +211,18 @@ function removeKey(fullKey: string): void {
   }
 }
 
+/** 作ったパズル (custom-…) の途中経過を、さいごにさわってから残しておく日数 */
+export const CUSTOM_KEEP_DAYS = 30;
+
 /**
  * もういらない途中経過かどうか。前の日までの今日のパズルと、ほかの月のステージ
- * (月の入っていない stage-3 の形は、月ごとに作り直す前の固定ステージ)
+ * (月の入っていない stage-3 の形は、月ごとに作り直す前の固定ステージ)。
+ * 作ったパズルは、さいごに保存した時刻 (at) から CUSTOM_KEEP_DAYS 日たったもの
  */
-export function isStaleProgress(progressId: string, today: string): boolean {
+export function isStaleProgress(progressId: string, today: string, at?: number): boolean {
+  if (progressId.startsWith('custom-')) {
+    return typeof at === 'number' && at < Date.parse(`${today}T00:00:00Z`) - CUSTOM_KEEP_DAYS * 86_400_000;
+  }
   if (progressId.startsWith('daily-')) return progressId !== `daily-${today}` && progressId !== `daily-easy-${today}`;
   const stage = progressId.match(/^(?:easy-)?stage-(?:(\d{4}-\d{2})-)?\d+$/);
   return !!stage && stage[1] !== stageMonth(today);

@@ -1,4 +1,5 @@
-export type Pos = '副詞' | '形容詞' | '動詞' | '形容動詞' | '名詞' | '四字熟語';
+/** '' は品詞なし (自分で作ったパズルの言葉) */
+export type Pos = '副詞' | '形容詞' | '動詞' | '形容動詞' | '名詞' | '四字熟語' | '';
 /** standard = 上級むけ、easy = 初級むけ */
 export type Mode = 'standard' | 'easy';
 export type Dir = 'across' | 'down'; // across = ヨコ, down = タテ
@@ -53,6 +54,12 @@ export function solutionGrid(p: Puzzle): (string | null)[] {
 /** 保存した途中経過が、今の問題のものかを見分けるための印 */
 export function puzzleSignature(p: Puzzle): string {
   return p.entries.map((e) => `${e.dir[0]}${e.row}.${e.col}${e.answer}`).join('|');
+}
+
+/** 人が入れた文字を整える。制御文字を消し、続く空白は 1 つにして、前後の空白を取り、max 文字までにする */
+export function cleanText(input: string, max: number): string {
+  const s = input.replace(/[\p{Cc}\p{Cf}\u2028\u2029]/gu, '').replace(/\s+/g, ' ').trim();
+  return [...s].slice(0, max).join('');
 }
 
 /** 日本時間での今日の日付 (YYYY-MM-DD) */

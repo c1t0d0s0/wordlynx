@@ -12,6 +12,8 @@ export const CHALLENGE_POINTS = 200;
 
 /** そのパズルをクリアするともらえるポイント。ステージの id は stage-2026-10-9 の形 (前の固定ステージは stage-9) */
 export function clearPoints(puzzleId: string): number {
+  // 自分たちで作ったパズルでは、ポイントはもらえない
+  if (puzzleId.startsWith('custom-')) return 0;
   return /^(easy-)?stage-(?:\d{4}-\d{2}-)?(9|10)$/.test(puzzleId) ? CHALLENGE_POINTS : CLEAR_POINTS;
 }
 

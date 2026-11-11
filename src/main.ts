@@ -1,17 +1,19 @@
 import './styles.css';
 import { DAILY_SIZE, STAGE_COUNT, generateDaily, stageSpec } from './core/generator';
 import { restoreStore, startCloud } from './cloud';
+import { decodeCustom } from './core/custom';
 import { jstDate, type Mode } from './core/puzzle';
 import { applyGrade, getMode, migrateCardPrices, migrateMode, migrateRewards } from './core/storage';
 import { CARDS } from './data/cards';
 import { EASY_WORDS, WORDS } from './data/words';
 import { renderBattle } from './ui/battle';
 import { renderCards } from './ui/cards';
+import { renderCreate } from './ui/create';
 import { renderGame } from './ui/game';
 import { h } from './ui/dom';
 import { renderHome, stageFor } from './ui/home';
 import { renderStamps } from './ui/stamps';
-import { TEXT } from './ui/text';
+import { CUSTOM, TEXT } from './ui/text';
 
 // 前にログインしていた人がいれば、通信を待たずに、この端末に残っているその人の写しで画面を出す
 restoreStore();
@@ -38,10 +40,12 @@ function route(): void {
   const stage = num >= 1 && num <= STAGE_COUNT;
   // #/battle は、たいせんの入口。#/battle/12345 は、その対戦コードの部屋
   const battle = location.hash.match(/^#\/battle(?:\/(\d{5}))?$/);
+  // #/create は、パズルを作る画面。#/play/… は、だれかが作ったパズル (中身が URL に入っている)
+  const play = location.hash.match(/^#\/play\/([\w-]+)$/);
   if (match?.[2] === 'daily') {
     const today = jstDate();
     const words = mode === 'easy' ? EASY_WORDS : WORDS;
-    cleanup = renderGame(app, generateDaily(words, today, mode), t.daily, mode, today);
+    cleanup = renderGame(app, generateDaily(words, today, mode), t.daily, mode, { dailyDate: today });
   } else if (stage) {
     // ステージは今月のもの。開くときに作る
     const today = jstDate();
@@ -61,6 +65,19 @@ function route(): void {
     }
   } else if (battle) {
     cleanup = renderBattle(app, battle[1]);
+  } else if (location.hash === '#/create') {
+    cleanup = renderCreate(app);
+  } else if (play) {
+    // URL の中身をパズルにもどす (展開に少し時間がかかるので、先に「作っています」を出す)
+    const playMode = getMode();
+    app.replaceChildren(h('main', { class: 'making' }, h('p', {}, TEXT[playMode].making)));
+    let alive = true;
+    cleanup = () => (alive = false);
+    void decodeCustom(play[1]).then((found) => {
+      if (!alive) return; // 待っている間に、ほかの画面にうつった
+      if (found) cleanup = renderGame(app, found.puzzle, found.title || CUSTOM.defaultTitle, playMode, { custom: true });
+      else app.replaceChildren(h('main', { class: 'making' }, h('div', { class: 'broken' }, h('p', {}, CUSTOM.broken), h('a', { class: 'btn', href: '#/' }, CUSTOM.goHome))));
+    });
   } else if (location.hash === '#/cards') {
     renderCards(app);
   } else if (location.hash === '#/stamps') {

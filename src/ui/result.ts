@@ -6,8 +6,9 @@ import { h, hanamaru, rubyHtml, withRuby } from './dom';
 import { TEXT } from './text';
 
 function wordCard(w: Word, showPos: boolean): HTMLElement {
-  const example = h('p', { class: 'word-example' });
-  example.innerHTML = rubyHtml(w.example).replace('〇〇', `<b>${w.reading}</b>`);
+  // 作ったパズルの言葉には、例文がないことがある
+  const example = w.example ? h('p', { class: 'word-example' }) : null;
+  if (example) example.innerHTML = rubyHtml(w.example).replace('〇〇', `<b>${w.reading}</b>`);
   return h(
     'li',
     { class: 'word' },
@@ -16,7 +17,7 @@ function wordCard(w: Word, showPos: boolean): HTMLElement {
       { class: 'word-head' },
       h('span', { class: 'word-reading' }, w.reading),
       w.kanji && h('span', { class: 'word-kanji' }, `【${w.kanji}】`),
-      showPos && h('span', { class: 'pos' }, w.pos),
+      showPos && w.pos && h('span', { class: 'pos' }, w.pos),
     ),
     withRuby('p', 'word-clue', w.clue),
     example,
