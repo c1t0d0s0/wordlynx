@@ -1,10 +1,11 @@
 import { STAGE_COUNT, dailyId, generateStage, stageId, stageMonth, stageSpec } from '../core/generator';
 import { jstDate, type Mode, type Puzzle } from '../core/puzzle';
-import { balance, currentStreak, getMode, getSound, pruneOldProgress, setMode, setSound, statusOf } from '../core/storage';
+import { titleOf } from '../core/rewards';
+import { balance, currentStreak, getMode, getSound, getStamps, pruneOldProgress, setMode, setSound, statusOf } from '../core/storage';
 import { EASY_WORDS, WORDS } from '../data/words';
 import { battleAvailable } from '../cloud/config';
 import { accountBox } from './account';
-import { h, hanamaru } from './dom';
+import { h, hanamaru, withRuby } from './dom';
 import { lynx } from './lynx';
 import { BATTLE, CUSTOM, TEXT, type Text } from './text';
 
@@ -26,6 +27,18 @@ function crest(): HTMLElement {
     }
   }
   return el;
+}
+
+/** オオヤマネコと、その下に今の称号と次の称号までの日数 */
+function lynxWithTitle(today: string, t: Text): HTMLElement {
+  const state = titleOf(getStamps(), today);
+  return h(
+    'div',
+    { class: 'lynx-box' },
+    lynx(),
+    withRuby('p', 'lynx-title', t.titleName(state.title)),
+    state.next ? withRuby('p', 'lynx-next', t.titleNext(state.left, state.next)) : null,
+  );
 }
 
 function modeSwitch(root: HTMLElement, current: Mode): HTMLElement {
@@ -111,7 +124,7 @@ export function renderHome(root: HTMLElement): void {
           { class: 'hero' },
           crest(),
           h('div', { class: 'hero-text' }, h('h1', { class: 'brand' }, 'Wordlynx'), h('p', { class: 'lead' }, t.lead)),
-          lynx(),
+          lynxWithTitle(today, t),
         ),
         modeSwitch(root, mode),
         h(

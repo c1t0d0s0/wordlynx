@@ -45,6 +45,7 @@ export function openResult(puzzle: Puzzle, opts: { celebrate: boolean; mode: Mod
           stamp && h('p', { class: 'result-stamp-title' }, t.stampDone),
           stamp && stamp.weekPoints > 0 && h('p', { class: 'result-reward' }, t.rewardWeek(stamp.run)),
           stamp && stamp.monthPoints > 0 && h('p', { class: 'result-reward' }, t.rewardMonth(opts.month ?? 0)),
+          stamp?.promoted && withRuby('p', 'result-reward', t.promoted(stamp.promoted)),
           gained > 0 && h('p', { class: 'result-balance' }, `${t.pointsLabel} ${t.points(balance())}`),
           // 今日のパズルのあとは、スタンプがたまった様子を見られるスタンプカードへ案内する
           opts.stamp

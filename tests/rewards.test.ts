@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addDays } from '../src/core/puzzle';
-import { CHALLENGE_POINTS, CLEAR_POINTS, clearPoints, currentRun, earnedPoints, monthView, rewardFor } from '../src/core/rewards';
+import { CHALLENGE_POINTS, CLEAR_POINTS, TITLES, clearPoints, currentRun, earnedPoints, monthView, promotedBy, rewardFor, titleOf } from '../src/core/rewards';
 import { addClear, addStamp, applyGrade, balance, buyCard, getCards, getClears, getMode, getStamps, isStaleProgress, migrateCardPrices, migrateMode, migrateRewards, modeFromGrade, pruneOldProgress, setMode, recordDailyClear, spendPoints } from '../src/core/storage';
 import { CARDS } from '../src/data/cards';
+import { TEXT } from '../src/ui/text';
 import { kanjiBeyondGrade3 } from './kanji';
 
 /** start から n 日ぶんの連続した日付 */
@@ -23,6 +24,79 @@ Object.defineProperty(globalThis, 'localStorage', {
   },
 });
 beforeEach(() => store.clear());
+
+describe('称号', () => {
+  /** 1 日おきの n 日 */
+  const everyOther = (start: string, n: number) => Array.from({ length: n }, (_, i) => addDays(start, i * 2));
+
+  it('十級から一級、初段から十段、そして師範の 21 段階', () => {
+    expect(TITLES.length).toBe(21);
+    expect(TITLES.slice(0, 3)).toEqual(['十級', '九級', '八級']);
+    expect(TITLES.slice(8, 12)).toEqual(['二級', '一級', '初段', '二段']);
+    expect(TITLES.slice(-2)).toEqual(['十段', '師範']);
+  });
+
+  it('はじめは十級。つづければ、あと 7 日で九級', () => {
+    expect(titleOf([], '2026-11-12')).toEqual({ level: 0, title: '十級', next: '九級', left: 7 });
+  });
+
+  it('7 日つづけると九級、14 日つづけると八級 (上がった日までの連続は持ちこさない)', () => {
+    expect(titleOf(days('2026-11-01', 6), '2026-11-06')).toMatchObject({ title: '十級', left: 1 });
+    expect(titleOf(days('2026-11-01', 7), '2026-11-07')).toMatchObject({ title: '九級', left: 7 });
+    expect(titleOf(days('2026-11-01', 13), '2026-11-13')).toMatchObject({ title: '九級', left: 1 });
+    expect(titleOf(days('2026-11-01', 14), '2026-11-14')).toMatchObject({ title: '八級' });
+  });
+
+  it('つづけなくても、10 日解けば上がる', () => {
+    expect(titleOf(everyOther('2026-11-01', 9), '2026-11-17')).toMatchObject({ title: '十級', left: 1 });
+    expect(titleOf(everyOther('2026-11-01', 10), '2026-11-19')).toMatchObject({ title: '九級' });
+    // 6 日つづけて 1 日あけ、4 日解くと、合わせて 10 日
+    const mixed = [...days('2026-11-01', 6), ...days('2026-11-08', 4)];
+    expect(titleOf(mixed.slice(0, -1), '2026-11-10')).toMatchObject({ title: '十級', left: 1 });
+    expect(titleOf(mixed, '2026-11-11')).toMatchObject({ title: '九級' });
+  });
+
+  it('あと何日かは、連続が切れたら日数のほうで数える。今日まだでも、きのうまで続いていれば連続で数える', () => {
+    const five = days('2026-11-01', 5);
+    expect(titleOf(five, '2026-11-05').left).toBe(2); // 今日解いた
+    expect(titleOf(five, '2026-11-06').left).toBe(2); // 今日はまだ。きのうまで 5 日
+    expect(titleOf(five, '2026-11-07').left).toBe(5); // 切れた。10 日のほうで、あと 5 日
+    const eight = everyOther('2026-11-01', 8);
+    expect(titleOf(eight, '2026-11-16').left).toBe(2); // 連続は 1 日だけなので、10 日のほうが近い
+  });
+
+  it('20 回上がると師範。それより多く解いても師範のまま', () => {
+    expect(titleOf(days('2026-01-01', 7 * 19), '2026-12-31')).toMatchObject({ title: '十段', next: '師範' });
+    expect(titleOf(days('2026-01-01', 7 * 20), '2026-12-31')).toEqual({ level: 20, title: '師範', next: null, left: 0 });
+    expect(titleOf(days('2026-01-01', 365), '2026-12-31').title).toBe('師範');
+    expect(titleOf(days('2026-01-01', 7 * 9), '2026-12-31').title).toBe('一級');
+    expect(titleOf(days('2026-01-01', 7 * 10), '2026-12-31').title).toBe('初段');
+  });
+
+  it('上がるのは、その日にスタンプが押されて上がったときだけ', () => {
+    const six = days('2026-11-01', 6);
+    expect(promotedBy(six, '2026-11-07')).toBe('九級');
+    expect(promotedBy(six, '2026-11-08')).toBeNull(); // 1 日あいたので、まだ 7 日目
+    expect(promotedBy(days('2026-11-01', 7), '2026-11-07')).toBeNull(); // 同じ日の 2 回目
+    expect(promotedBy(days('2026-01-01', 7 * 20), '2026-07-01')).toBeNull(); // 師範より上はない
+  });
+
+  it('知らせる文言。一級の次は昇段、師範は「なった」', () => {
+    const t = TEXT.standard;
+    expect([t.promoted('九級'), t.promoted('初段'), t.promoted('師範')]).toEqual(['九級に昇級！', '初段に昇段！', '師範になった！']);
+    expect(t.titleNext(3, '八級')).toBe('あと3日で八級');
+    const e = TEXT.easy;
+    expect(e.promoted('九級')).toBe('九級(きゅうきゅう)に 昇級(しょうきゅう)！');
+    expect(e.titleNext(3, '師範')).toBe('あと 3日で 師範(しはん)');
+    // 初級は、ふりがなをつけた漢字をのぞけば 3 年生までの漢字だけ
+    const plain = (s: string) => s.replace(/[一-龠々]+\([ぁ-ん]+\)/g, '');
+    for (const title of TITLES) {
+      expect(e.titleName(title)).toMatch(/\([ぁ-ん]+\)$/);
+      for (const s of [e.titleName(title), e.promoted(title), e.titleNext(2, title)]) expect(kanjiBeyondGrade3(plain(s)), s).toEqual([]);
+    }
+    expect(kanjiBeyondGrade3(e.howtoItems.join(''))).toEqual([]);
+  });
+});
 
 describe('ステージのポイント', () => {
   it('チャレンジ (9・10) は 200pt、ほかは 20pt。前の固定ステージの id も同じ', () => {
@@ -143,12 +217,12 @@ describe('ポイントの計算', () => {
 
   it('スタンプを足したときにもらえる分', () => {
     const six = days('2026-10-05', 6);
-    expect(rewardFor(six, '2026-10-11')).toEqual({ added: true, run: 7, weekPoints: 1000, monthPoints: 0 });
-    expect(rewardFor(six, '2026-10-10')).toEqual({ added: false, run: 6, weekPoints: 0, monthPoints: 0 });
+    expect(rewardFor(six, '2026-10-11')).toEqual({ added: true, run: 7, weekPoints: 1000, monthPoints: 0, promoted: '九級' });
+    expect(rewardFor(six, '2026-10-10')).toEqual({ added: false, run: 6, weekPoints: 0, monthPoints: 0, promoted: null });
     // 月の最後の日: 31 日目は 7 の倍数ではないので月の分だけ
-    expect(rewardFor(days('2026-10-01', 30), '2026-10-31')).toEqual({ added: true, run: 31, weekPoints: 0, monthPoints: 5000 });
+    expect(rewardFor(days('2026-10-01', 30), '2026-10-31')).toEqual({ added: true, run: 31, weekPoints: 0, monthPoints: 5000, promoted: null });
     // 2 月 28 日: 28 日目なので週の分と月の分の両方
-    expect(rewardFor(days('2026-02-01', 27), '2026-02-28')).toEqual({ added: true, run: 28, weekPoints: 1000, monthPoints: 5000 });
+    expect(rewardFor(days('2026-02-01', 27), '2026-02-28')).toEqual({ added: true, run: 28, weekPoints: 1000, monthPoints: 5000, promoted: '六級' });
   });
 });
 

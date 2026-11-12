@@ -1,5 +1,14 @@
 import type { Dir, Mode, Pos } from '../core/puzzle';
-import { CHALLENGE_POINTS, CLEAR_POINTS, FREE_HINTS, HINT_COST, MONTH_POINTS, WEEK_LENGTH, WEEK_POINTS } from '../core/rewards';
+import { CHALLENGE_POINTS, CLEAR_POINTS, FREE_HINTS, HINT_COST, MONTH_POINTS, TITLE_DAYS, TITLE_RUN, WEEK_LENGTH, WEEK_POINTS } from '../core/rewards';
+
+/** 称号の読み (初級でふりがなにする) */
+const TITLE_READINGS: Record<string, string> = {
+  十級: 'じっきゅう', 九級: 'きゅうきゅう', 八級: 'はっきゅう', 七級: 'ななきゅう', 六級: 'ろっきゅう',
+  五級: 'ごきゅう', 四級: 'よんきゅう', 三級: 'さんきゅう', 二級: 'にきゅう', 一級: 'いっきゅう',
+  初段: 'しょだん', 二段: 'にだん', 三段: 'さんだん', 四段: 'よだん', 五段: 'ごだん',
+  六段: 'ろくだん', 七段: 'ななだん', 八段: 'はちだん', 九段: 'くだん', 十段: 'じゅうだん',
+  師範: 'しはん',
+};
 
 /** 画面の文言。初級モードは、3 年生までに習う漢字だけを使い、分かち書きにする */
 export interface Text {
@@ -57,6 +66,12 @@ export interface Text {
   rewardClear: (points: number) => string;
   rewardWeek: (run: number) => string;
   rewardMonth: (month: number) => string;
+  /** 称号の出し方 (初級は「十級(じっきゅう)」のように読みをつけ、withRuby で出す) */
+  titleName: (title: string) => string;
+  /** 次の称号まで */
+  titleNext: (left: number, next: string) => string;
+  /** 称号が上がったとき */
+  promoted: (title: string) => string;
   points: (n: number) => string;
   pointsLabel: string;
   seeCards: string;
@@ -118,6 +133,7 @@ const standard: Text = {
     'パソコンでは、半角のローマ字で入力できます。矢印キーで動き、スペースキーでタテとヨコを切りかえます。',
     'まよったら「こたえあわせ」や「ヒント」を使えます。',
     `ヒントは1つのパズルで${FREE_HINTS}回まで。それより多く使うときは、1回${HINT_COST}ptいります。`,
+    `今日のパズルを${TITLE_RUN}日つづけて解くか、${TITLE_DAYS}日解くと、称号が上がります (十級から一級、初段から十段、そして師範)。`,
   ],
   stageTitle: (n) => `ステージ ${n}`,
   challengeTitle: (n) => `チャレンジ ${n}`,
@@ -161,6 +177,9 @@ const standard: Text = {
   rewardClear: (points) => `クリア！ +${points}pt`,
   rewardWeek: (run) => `${run}日つづいた！ +${WEEK_POINTS}pt`,
   rewardMonth: (month) => `${month}月のスタンプが全部そろった！ +${MONTH_POINTS}pt`,
+  titleName: (title) => title,
+  titleNext: (left, next) => `あと${left}日で${next}`,
+  promoted: (title) => (title === '師範' ? '師範になった！' : `${title}に${title.endsWith('段') ? '昇段' : '昇級'}！`),
   points: (n) => `${n.toLocaleString('ja-JP')}pt`,
   pointsLabel: '持っているポイント',
   seeCards: 'カードを見る',
@@ -206,7 +225,14 @@ const easy: Text = {
     '「゛」「゜」は、字を 入れた あとに おします。',
     '分からない ときは「こたえあわせ」や「ヒント」を 使えます。',
     `ヒントは 1つの パズルで ${FREE_HINTS}回まで。それより 多く 使う ときは、1回 ${HINT_COST}pt いります。`,
+    `今日の パズルを ${TITLE_RUN}日 つづけて とくか、${TITLE_DAYS}日 とくと、オオヤマネコの 下の「きゅう」や「だん」が 上がるよ。`,
   ],
+  titleName: (title) => `${title}(${TITLE_READINGS[title] ?? ''})`,
+  titleNext: (left, next) => `あと ${left}日で ${next}(${TITLE_READINGS[next] ?? ''})`,
+  promoted: (title) =>
+    title === '師範'
+      ? '師範(しはん)に なった！'
+      : `${title}(${TITLE_READINGS[title] ?? ''})に ${title.endsWith('段') ? '昇段(しょうだん)' : '昇級(しょうきゅう)'}！`,
   dir: { across: 'よこ', down: 'たて' },
   cluesTitle: { across: 'よこの ヒント', down: 'たての ヒント' },
   meta: (_pos, n) => `${n}文字`,

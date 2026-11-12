@@ -234,6 +234,36 @@ rt {
   width: clamp(3.25rem, 16vw, 6.5rem);
 }
 
+.lynx-box .lynx {
+  width: 100%;
+}
+
+/* オオヤマネコの下の称号 */
+.lynx-box {
+  flex: none;
+  width: clamp(3.75rem, 17vw, 6.5rem);
+  text-align: center;
+}
+
+.lynx-title {
+  margin: 0.15rem 0 0;
+  font-weight: 700;
+  font-size: clamp(0.85rem, 3.4vw, 1.05rem);
+  line-height: 1.5;
+}
+
+.lynx-next {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.6875rem;
+  line-height: 1.6;
+}
+
+.lynx-title rt,
+.lynx-next rt {
+  font-size: 0.55em;
+}
+
 .lynx svg {
   display: block;
   width: 100%;
